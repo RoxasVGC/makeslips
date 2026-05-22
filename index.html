@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Match Slips Generator</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+    <style>
+        /* =========================================
+           USER INTERFACE STYLES (Hidden when printing)
+           ========================================= */
+        @media print {
+            #ui-container { display: none !important; }
+            body { background: white; }
+        }
+        @media screen {
+            body { background-color: #f0f0f0; font-family: Arial, sans-serif; }
+            #ui-container { background: #fff; padding: 20px; margin: 20px auto; max-width: 900px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+            .form-group { margin-bottom: 15px; }
+            .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+            .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
+            .match-entry { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 4px; background: #fafafa; }
+            .flex-row { display: flex; gap: 15px; }
+            .flex-col { flex: 1; }
+            button { padding: 10px 15px; cursor: pointer; background: #007BFF; color: white; border: none; border-radius: 4px; font-weight: bold; }
+            button:hover { background: #0056b3; }
+            .btn-danger { background: #dc3545; }
+            .btn-danger:hover { background: #c82333; }
+            .btn-success { background: #28a745; margin-top: 20px;}
+            .btn-success:hover { background: #218838; }
+            hr { margin: 20px 0; }
+        }
+
+        /* =========================================
+           MANDATORY MATCH SLIP STYLES
+           ========================================= */
+        .match_slip { width: 700px; padding: 0; page-break-before: avoid; page-break-inside: avoid; page-break-after: avoid; orphans: 0; widows: 0; }
+        .table-font-size { font-size: 10pt; }
+        .barcode { border: none; }
+        
+        .player-1-barcode img, .player-2-barcode img, .tie-barcode img { transform: rotate(90deg) translate(-86px, 15px); position: absolute; width: 25px; height: 200px; }
+        table { font-family: Verdana, Arial, Helvetica, sans-serif, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "MS PGothic", "Meyrio"; padding: 0; border-spacing: 0; border-collapse: collapse; }
+        td { font-family: Verdana, Arial, Helvetica, sans-serif, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "MS PGothic", "Meyrio"; border: 1px inset black; background: white; color: black; }
+        @page { size: 8.5in 11in; margin: 0.22in 0.0in 0.0in 0.0in; }
+        .heading { font-variant: small-caps; text-align: center; vertical-align: middle; }
+        .small { font-size: 10px; }
+        .pagebreak { height: 0px; page-break-before: always; }
+        td.matchrecord { height: 50px; }
+        tr.nobottomborder td { border-bottom: none; }
+        tr.noleftborder td { border-left: none; }
+        tr.norightborder td { border-right: none; }
+        .noborders { border: none; }
+        tr.notopborder td { border-top: none; }
+        .debug { border-color: red; }
+        .match_slip_format { height: 216px; margin: 0 auto; border-collapse: separate; }
+        .player-1-win { width: 40px; border-width: 0; border-style: solid none; border-color: rgb(0, 0, 0); position: relative; }
+        .player-1-win-details { position: absolute; margin-top: 2px; width: 208px; height: 100px; text-align: left; overflow: hidden; top: 0; left: 0; transform-origin: left top; transform: rotate(90deg) translate(0px, -40px); }
+        .player-1-info { width: 180px; border-width: 2px 1px 2px 2px; border-style: none none none solid; border-color: rgb(0, 0, 0); position: relative; }
+        .player-1-info-details { position: absolute; top: 0; left: 0; width: 212px; height: 180px; text-align: center; padding: 0; overflow: hidden; transform-origin: right top; transform: rotate(-90deg) translate(0px, -212px); }
+        .tied-info { width: 260px; vertical-align: middle; border: 1px dashed rgb(0, 0, 0); position: relative; }
+        .tied-info-details { margin-left: auto; margin-right: auto; text-align: center; padding: 0; overflow: auto; width: 100%; vertical-align: bottom; }
+        .player-2-info { width: 180px; border-width: 2px 2px 2px 1px; border-style: none solid none none; border-color: rgb(0, 0, 0); position: relative; }
+        .player-2-info-details { position: absolute; top: 0; left: 0; width: 212px; height: 180px; text-align: center; padding: 0; overflow: hidden; transform-origin: left top; transform: rotate(90deg) translate(0px, -177px); }
+        .player-2-win { width: 40px; border-width: 0; border-style: solid none; border-color: rgb(0, 0, 0); position: relative; }
+        .player-2-win-details { position: absolute; margin-top: 2px; width: 208px; height: 100px; text-align: left; overflow: hidden; top: 0; right: 0; transform-origin: right top; transform: rotate(-90deg) translate(0px, -40px); }
+        .below-barcode-padding { padding-top: 0px; }
+        .tie-instructions { margin-top: 4px; }
+        div.pagebreak { height: 0px; }
+        hr.slip-separator { margin: 24px; border: 1px solid #000; }
+
+        /* =========================================
+           NEW STYLES FOR NAME TRUNCATION & NATIONALITY
+           ========================================= */
+        .truncate-name {
+            display: block;
+            width: 190px;
+            margin: 0 auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .nat-line {
+            display: block;
+            font-size: 16px;
+            font-weight: bold;
+            min-height: 20px; /* Keeps the space even if no nationality is provided */
+            margin-bottom: 10px;
+        }
+        .truncate-name-small {
+            display: inline-block;
+            max-width: 125px; /* Ensures it doesn't overlap with the float:right stats */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: bottom;
+        }
+    </style>
+</head>
+<body class="report">
+
+    <div id="ui-container">
+        <h2>Match Slips Control Panel</h2>
+        
+        <div class="flex-row">
+            <div class="form-group flex-col">
+                <label>Tournament Name</label>
+                <input type="text" id="tournamentName" value="Test for slips">
+            </div>
+            <div class="form-group flex-col">
+                <label>Event Code (POD)</label>
+                <input type="text" id="podId" value="2">
+            </div>
+            <div class="form-group flex-col">
+                <label>Round Number</label>
+                <input type="number" id="roundNum" value="1">
+            </div>
+        </div>
+
+        <h3>Tables Management</h3>
+        <div id="matches-container"></div>
+
+        <button onclick="addTable()">+ Add Table</button>
+        <hr>
+        <button class="btn-success" onclick="generateSlips()">1. Generate Match Slips</button>
+        <button class="btn-success" onclick="window.print()">2. Print</button>
+    </div>
+
+    <div id="print-container"></div>
+
+    <script>
+        let tableCounter = 0;
+
+        window.onload = function() {
+            addTable();
+        };
+
+        // =========================================================
+        // STRING PARSING FOR NAME AND NATIONALITY
+        // =========================================================
+        function parsePlayerName(fullName) {
+            let name = fullName.trim();
+            let nat = "";
+            // Matches a string ending with brackets, e.g., "Andrea Ceolin [IT]"
+            const match = name.match(/(.*?)\s*(\[[^\]]+\])$/);
+            if (match) {
+                name = match[1].trim(); // Everything before the brackets
+                nat = match[2].trim();  // The brackets [XX]
+            }
+            return { name, nat };
+        }
+
+        // =========================================================
+        // CHECK DIGIT ALGORITHM
+        // =========================================================
+        function computeCheckDigit(body) {
+            if (!body || body.trim().length !== body.length || !/^\d+$/.test(body)) {
+                throw new Error("Only digits, no spaces.");
+            }
+
+            let sum = 0;
+            let doubleNext = (body.length % 2 === 0);
+
+            for (let i = body.length - 1; i >= 0; i--) {
+                let digit = parseInt(body[i], 10);
+                
+                if (doubleNext) {
+                    digit *= 2;
+                }
+                
+                sum += digit;
+                doubleNext = !doubleNext;
+            }
+
+            return (10 - (sum % 10)) % 10;
+        }
+
+        function calculateBarcode(type, podId, roundNum, tableNum) {
+            let outcome = '0';
+            if (type === 'p1') outcome = '1';
+            else if (type === 'p2') outcome = '2';
+            else if (type === 'tie') outcome = '3';
+
+            let body = `${podId}${roundNum}${tableNum}${outcome}`;
+            let checkDigit = computeCheckDigit(body);
+            return body + checkDigit;
+        }
+
+        // =========================================================
+        // UI MANAGEMENT
+        // =========================================================
+        function addTable() {
+            tableCounter++;
+            const container = document.getElementById('matches-container');
+            const div = document.createElement('div');
+            div.className = 'match-entry';
+            div.id = `table-form-${tableCounter}`;
+            
+            div.innerHTML = `
+                <h4>Table #${tableCounter} <button class="btn-danger" style="float:right; padding: 5px 10px;" onclick="removeTable(${tableCounter})">Remove</button></h4>
+                <div class="flex-row">
+                    <div class="form-group flex-col">
+                        <label>Table Num.</label>
+                        <input type="text" class="table-num" value="${tableCounter}">
+                    </div>
+                </div>
+                <div class="flex-row">
+                    <div class="form-group flex-col">
+                        <label>Player 1 - Name</label>
+                        <input type="text" class="p1-name" value="Player 1 Name [IT]">
+                    </div>
+                    <div class="form-group flex-col">
+                        <label>Player 1 - ID</label>
+                        <input type="text" class="p1-id" value="000000">
+                    </div>
+                    <div class="form-group flex-col">
+                        <label>Player 1 - Category/Stats</label>
+                        <input type="text" class="p1-stats" value="0/0/0 (0)">
+                    </div>
+                </div>
+                <div class="flex-row">
+                    <div class="form-group flex-col">
+                        <label>Player 2 - Name</label>
+                        <input type="text" class="p2-name" value="Player 2 Name [BE]">
+                    </div>
+                    <div class="form-group flex-col">
+                        <label>Player 2 - ID</label>
+                        <input type="text" class="p2-id" value="000000">
+                    </div>
+                    <div class="form-group flex-col">
+                        <label>Player 2 - Category/Stats</label>
+                        <input type="text" class="p2-stats" value="0/0/0 (0)">
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeTable(id) {
+            const element = document.getElementById(`table-form-${id}`);
+            element.remove();
+        }
+
+        // =========================================================
+        // MATCH SLIPS HTML GENERATION
+        // =========================================================
+        function generateSlips() {
+            const tournamentName = document.getElementById('tournamentName').value;
+            const podId = document.getElementById('podId').value;
+            const roundNum = document.getElementById('roundNum').value;
+            const container = document.getElementById('print-container');
+            container.innerHTML = ''; 
+
+            const matches = document.querySelectorAll('.match-entry');
+            let htmlOutput = '\n';
+
+            matches.forEach((match, index) => {
+                const tableNum = match.querySelector('.table-num').value;
+                
+                // Read and Parse Player 1
+                const p1RawName = match.querySelector('.p1-name').value;
+                const p1Parsed = parsePlayerName(p1RawName);
+                const p1Id = match.querySelector('.p1-id').value;
+                const p1Stats = match.querySelector('.p1-stats').value;
+                
+                // Read and Parse Player 2
+                const p2RawName = match.querySelector('.p2-name').value;
+                const p2Parsed = parsePlayerName(p2RawName);
+                const p2Id = match.querySelector('.p2-id').value;
+                const p2Stats = match.querySelector('.p2-stats').value;
+
+                // Generate Keys
+                const barcodeP1 = calculateBarcode('p1', podId, roundNum, tableNum);
+                const barcodeP2 = calculateBarcode('p2', podId, roundNum, tableNum);
+                const barcodeTie = calculateBarcode('tie', podId, roundNum, tableNum);
+
+                htmlOutput += `
+<table class="match_slip match_slip_format">
+    <tbody>
+    <tr class="noborders">
+        <td class="player-1-win">
+            <div class="barcode1 small rotate-left player-1-win-details">
+                <span style="float: right; text-align: right;">${p1Stats}<br><u>Initial below:</u></span>
+                <span class="truncate-name-small">${p1Parsed.name}</span><br>
+                ${p1Parsed.nat ? `<span>${p1Parsed.nat}</span><br>` : ''}
+                <span style="font-size: 18px">${p1Id}  - MA <span></span></span>
+            </div>
+        </td>
+        <td class="player-1-info">
+            <div class="player1 player-1-info-details">
+                <i style="font-size: 10px;">key: ${barcodeP1}</i>
+                <div class="player-1-barcode barcode-placeholder" data-barcode="${barcodeP1}">${barcodeP1}</div>
+                <div class="below-barcode-padding">
+                    <span style="font-size: 20px;" class="heading">Table #${tableNum}</span><br>
+                    <span class="truncate-name">${p1Parsed.name}</span>
+                    <span class="nat-line">${p1Parsed.nat}</span>
+                    <b style="font-size: 16px;">WINNER</b><br>
+                    <b style="font-size: 12px;">Player 1</b>
+                </div>
+            </div>
+        </td>
+        <td class="tied-info">
+            <div class="barcode3 small tied-info-details">
+                <i>key: ${barcodeTie}</i><br>
+                <div class="tie-barcode barcode-placeholder" data-barcode="${barcodeTie}">${barcodeTie}</div>
+                <div class="below-barcode-padding">
+                    <b>${tournamentName}<br>
+                        Round ${roundNum} </b>
+                    <div class="tie-instructions">
+                        <i>checkmark who wins each game,<br>
+                            circle <b>WINNER</b> or <b>TIE</b> for the match,<br>
+                            then both players initial their end</i>
+                    </div>
+                    <div>
+                        <span style="font-size: 14px;">_______ ▢ game 1 ▢ _______<br>_______ ▢ game 2 ▢ _______<br>_______ ▢ game 3 ▢ _______</span><br><br><span style="font-size: 16px;"><b>TIE</b></span>
+                    </div>
+                </div>
+            </div>
+        </td>
+        <td class="player-2-info">
+            <div class="player2 player-2-info-details">
+                <i style="font-size: 10px;">key: ${barcodeP2}</i>
+                <div class="player-2-barcode barcode-placeholder" data-barcode="${barcodeP2}">${barcodeP2}</div>
+                <div class="below-barcode-padding">
+                    <span style="font-size: 20px;" class="heading">Table #${tableNum}</span><br>
+                    <span class="truncate-name">${p2Parsed.name}</span>
+                    <span class="nat-line">${p2Parsed.nat}</span>
+                    <b style="font-size: 16px;">WINNER</b><br>
+                    <b style="font-size: 12px;">Player 2</b>
+                </div>
+            </div>
+        </td>
+        <td class="player-2-win">
+            <div class="barcode2 small player-2-win-details">
+                <span style="float: right; text-align: right;">${p2Stats}<br><u>Initial below:</u></span>
+                <span class="truncate-name-small">${p2Parsed.name}</span><br>
+                ${p2Parsed.nat ? `<span>${p2Parsed.nat}</span><br>` : ''}
+                <span style="font-size: 18px">${p2Id}  - MA<span></span></span>
+            </div>
+        </td>
+    </tr>
+    </tbody>
+</table>`;
+                
+                if (index < matches.length - 1) {
+                    htmlOutput += `<hr class="slip-separator">`;
+                }
+            });
+
+            htmlOutput += '\n';
+            container.innerHTML = htmlOutput;
+
+            initializeBarcodes();
+        }
+
+        let initializeBarcodes = function() {
+            if (typeof JsBarcode !== "function") {
+                console.warn("JsBarcode is not available. Barcode generation skipped.");
+                return;
+            }
+            document.querySelectorAll(".barcode-placeholder").forEach(element => {
+                const value = element.dataset.barcode;
+                if (value && value.trim() !== "") {
+                element.innerHTML = `
+                    <svg class="barcode"
+                        jsbarcode-format="CODE128" jsbarcode-value="${value.trim()}"
+                        jsbarcode-width="2" jsbarcode-height="25"
+                        jsbarcode-padding="0" jsbarcode-margin="0"
+                        jsbarcode-displayvalue="false">
+                    </svg>
+                `;
+                }
+            });
+            JsBarcode(".barcode").init();
+        }
+    </script>
+</body>
+</html>
