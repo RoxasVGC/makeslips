@@ -113,12 +113,6 @@
             color: #fff;
         }
 
-        .banner.banner-success {
-            background: rgba(46, 196, 182, 0.12);
-            border-color: var(--acc-green);
-            color: #fff;
-        }
-
         /* Control Card */
         .panel {
             background: var(--surf);
@@ -153,7 +147,7 @@
             }
         }
 
-        input[type="text"], select, input[type="number"] {
+        input[type="text"], select {
             width: 100%;
             padding: 11px 14px;
             background: var(--surf2);
@@ -166,7 +160,7 @@
             transition: border-color 0.15s ease;
         }
 
-        input[type="text"]:focus, select:focus, input[type="number"]:focus {
+        input[type="text"]:focus, select:focus {
             border-color: var(--acc2);
         }
 
@@ -438,6 +432,17 @@
             color: #fff;
             margin-bottom: 8px;
         }
+
+        .error-help {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: rgba(230, 57, 70, 0.1);
+            border: 1px solid rgba(230, 57, 70, 0.3);
+            border-radius: 6px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #ffb4b4;
+        }
     </style>
 </head>
 <body>
@@ -452,7 +457,7 @@
         <!-- Notification Permission Banner -->
         <div id="notif-banner" class="banner banner-warning">
             <div>
-                <strong>🔔 Notifications Disabled:</strong> Enable browser notifications to receive alerts when rounds are ending!
+                <strong>🔔 Notifications:</strong> Enable browser notifications to receive alerts when rounds are ending!
             </div>
             <button type="button" class="btn-small btn-success" onclick="requestNotificationPermission()">Enable Notifications</button>
         </div>
@@ -489,8 +494,12 @@
                     </select>
                 </div>
                 <div class="setting-group">
+                    <label>Custom CORS Proxy (Optional)</label>
+                    <input type="text" id="setting-custom-proxy" placeholder="e.g. https://your-worker.workers.dev/?url=" onchange="saveSettings()" style="font-size: 12px; padding: 8px;">
+                </div>
+                <div class="setting-group">
                     <label>Test Notification</label>
-                    <button type="button" class="btn-secondary btn-small" style="width: 100%; height: 42px;" onclick="testNotification()">🔔 Test Push Alert</button>
+                    <button type="button" class="btn-secondary btn-small" style="width: 100%; height: 38px;" onclick="testNotification()">🔔 Test Push Alert</button>
                 </div>
             </div>
         </div>
@@ -503,19 +512,10 @@
         // State
         let tournaments = [];
         let pollingTimer = null;
-        let countdownTimer = null;
-        let nextCheckTimestamp = 0;
         let notifiedKeys = new Set(); // tournamentId_division_round
 
-        // Default sample tournament if empty
-        const DEFAULT_URL = 'https://rk9.gg/pairings/TU02wKzv4cT2BBiI9dEg';
-
-        // Multi-proxy endpoints with automatic fallback
-        const PROXIES = [
-            (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-            (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-            (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
-        ];
+        // Primary Cloudflare Worker Proxy
+        const DEFAULT_PROXY = 'https://pkmtools.mostallinoenrico.workers.dev/?url=';
 
         // ---------------------------------------------------------
         // LOCAL STORAGE & INITIALIZATION
@@ -528,31 +528,30 @@
                 const savedInterval = localStorage.getItem('rk9_interval');
                 if (savedInterval) document.getElementById('setting-interval').value = savedInterval;
 
+                const savedProxy = localStorage.getItem('rk9_custom_proxy');
+                if (document.getElementById('setting-custom-proxy')) {
+                    document.getElementById('setting-custom-proxy').value = savedProxy || DEFAULT_PROXY;
+                }
+
                 const savedTourneys = localStorage.getItem('rk9_tournaments');
                 if (savedTourneys) {
                     tournaments = JSON.parse(savedTourneys);
                 } else {
-                    // Seed with default sample
-                    tournaments = [{
-                        url: DEFAULT_URL,
-                        id: extractTournamentId(DEFAULT_URL),
-                        selectedDivision: null,
-                        lastData: null,
-                        error: null,
-                        lastCheck: null
-                    }];
-                    saveTournaments();
+                    tournaments = []; // Start empty
                 }
             } catch (e) {
                 console.error("Error loading settings:", e);
+                tournaments = [];
             }
         }
 
         function saveSettings() {
             const threshold = document.getElementById('setting-threshold-mode').value;
             const interval = document.getElementById('setting-interval').value;
+            const customProxy = document.getElementById('setting-custom-proxy')?.value || '';
             localStorage.setItem('rk9_threshold_mode', threshold);
             localStorage.setItem('rk9_interval', interval);
+            localStorage.setItem('rk9_custom_proxy', customProxy.trim());
         }
 
         function saveTournaments() {
@@ -629,30 +628,62 @@
         // FETCHING & PARSING RK9 HTML
         // ---------------------------------------------------------
         async function fetchWithFallback(targetUrl) {
+            const customProxy = (document.getElementById('setting-custom-proxy')?.value || DEFAULT_PROXY).trim();
+            const proxyList = [];
+
+            if (customProxy) {
+                proxyList.push(async (url) => {
+                    const endpoint = customProxy.includes('?') ? `${customProxy}${encodeURIComponent(url)}` : `${customProxy}/${url}`;
+                    const r = await fetch(endpoint);
+                    if (!r.ok) throw new Error(`Proxy HTTP ${r.status}`);
+                    return await r.text();
+                });
+            }
+
+            // Fallback public proxies with decoding
+            proxyList.push(async (url) => {
+                const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+                if (!r.ok) throw new Error(`Allorigins HTTP ${r.status}`);
+                const data = await r.json();
+                if (!data.contents) throw new Error("Empty allorigins payload");
+                return data.contents;
+            });
+
+            proxyList.push(async (url) => {
+                const r = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`);
+                if (!r.ok) throw new Error(`Codetabs HTTP ${r.status}`);
+                return await r.text();
+            });
+
+            // Direct fetch (works if running inside Chrome extension with host_permissions)
+            proxyList.push(async (url) => {
+                const r = await fetch(url, { mode: 'cors' });
+                if (!r.ok) throw new Error(`Direct fetch HTTP ${r.status}`);
+                return await r.text();
+            });
+
             let lastErr = null;
-            for (let i = 0; i < PROXIES.length; i++) {
+            for (let i = 0; i < proxyList.length; i++) {
                 try {
-                    const proxyUrl = PROXIES[i](targetUrl);
-                    const resp = await fetch(proxyUrl, { cache: 'no-store' });
-                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                    const html = await resp.text();
-                    if (html && (html.includes('Tournament Pairings') || html.includes('nav-pills') || html.includes('tab-content'))) {
+                    const html = await proxyList[i](targetUrl);
+                    if (html && (html.includes('Tournament Pairings') || html.includes('nav-pills') || html.includes('tab-content') || html.includes('current-tables'))) {
                         return html;
                     }
                 } catch (err) {
                     lastErr = err;
                 }
             }
-            throw new Error(lastErr ? lastErr.message : "Failed to fetch tournament page across all CORS proxies.");
+
+            throw new Error(lastErr ? lastErr.message : "Unable to reach RK9. Set a custom CORS proxy (like Cloudflare Workers) in Settings.");
         }
 
         function parseRk9Html(html) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
 
-            // Tournament Title & Subtitle
+            // Tournament Title
             let title = "Tournament Pairings";
-            const h4Title = doc.querySelector('h4.mb-0');
+            const h4Title = doc.querySelector('h4.mb-0') || doc.querySelector('h4');
             if (h4Title) title = h4Title.textContent.trim();
 
             const dateH5 = doc.querySelector('h5.my-0');
@@ -664,9 +695,8 @@
 
             pillLinks.forEach(link => {
                 const targetId = (link.getAttribute('href') || '').replace('#', '');
-                const rawName = link.textContent.trim(); // e.g. "Masters in Round 16"
+                const rawName = link.textContent.trim();
                 
-                // Parse division name & current round
                 let divName = rawName;
                 let roundNum = 1;
                 const match = rawName.match(/^(.*?)\s+in\s+Round\s+(\d+)/i);
@@ -675,14 +705,12 @@
                     roundNum = parseInt(match[2], 10);
                 }
 
-                // Check division tab pane
                 const divPane = doc.getElementById(targetId);
                 let totalMatches = 0;
                 let pendingMatches = 0;
                 let completedMatches = 0;
 
                 if (divPane) {
-                    // Find active round tab
                     const activeRoundTab = divPane.querySelector('.current-tables.active, .current-tables.show') || 
                                            divPane.querySelector('.current-tables');
                     
@@ -719,8 +747,7 @@
         // TOURNAMENT MONITOR & ALERT ENGINE
         // ---------------------------------------------------------
         async function checkAllTournaments() {
-            const intervalSec = parseInt(document.getElementById('setting-interval').value, 10) || 45;
-            nextCheckTimestamp = Date.now() + (intervalSec * 1000);
+            if (tournaments.length === 0) return;
 
             for (const tourney of tournaments) {
                 try {
@@ -730,7 +757,6 @@
                     tourney.error = null;
                     tourney.lastCheck = new Date().toLocaleTimeString();
 
-                    // Evaluate alert conditions
                     evaluateAlerts(tourney);
                 } catch (err) {
                     console.error("Error fetching tournament:", tourney.url, err);
@@ -747,7 +773,6 @@
             const thresholdSetting = document.getElementById('setting-threshold-mode').value;
 
             tourney.lastData.divisions.forEach(div => {
-                // If round has no tables, skip
                 if (div.totalMatches === 0) return;
 
                 let shouldAlert = false;
@@ -801,9 +826,12 @@
                                 </div>
                                 <button type="button" class="btn-small btn-secondary" onclick="removeTournament(${tIndex})">Remove</button>
                             </div>
-                            <div class="tourney-footer">
+                            <div class="error-help">
+                                💡 <strong>Tip:</strong> RK9 uses Cloudflare security which may throttle public proxies. You can connect your own free Cloudflare Worker in the settings above for 100% instant, reliable updates!
+                            </div>
+                            <div class="tourney-footer" style="margin-top: 14px;">
                                 <span>Last attempt: ${tourney.lastCheck || 'Never'}</span>
-                                <button type="button" class="btn-small btn-secondary" onclick="checkAllTournaments()">Retry Now</button>
+                                <button type="button" class="btn-small btn-secondary" onclick="checkAllTournaments()">⚡ Retry Now</button>
                             </div>
                         </div>
                     `;
@@ -824,7 +852,6 @@
                     return;
                 }
 
-                // Determine active selected division
                 const activeDivId = tourney.selectedDivision || (data.divisions[0] ? data.divisions[0].id : null);
                 const activeDiv = data.divisions.find(d => d.id === activeDivId) || data.divisions[0] || {
                     name: 'Division', round: 1, totalMatches: 0, completedMatches: 0, pendingMatches: 0, percentComplete: 0
@@ -953,7 +980,9 @@
             loadSettings();
             checkNotificationPermission();
             renderTournaments();
-            checkAllTournaments();
+            if (tournaments.length > 0) {
+                checkAllTournaments();
+            }
             updateIntervalTimer();
         });
     </script>
