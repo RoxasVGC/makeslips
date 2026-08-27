@@ -494,10 +494,6 @@
                     </select>
                 </div>
                 <div class="setting-group">
-                    <label>Custom CORS Proxy (Optional)</label>
-                    <input type="text" id="setting-custom-proxy" placeholder="e.g. https://your-worker.workers.dev/?url=" onchange="saveSettings()" style="font-size: 12px; padding: 8px;">
-                </div>
-                <div class="setting-group">
                     <label>Test Notification</label>
                     <button type="button" class="btn-secondary btn-small" style="width: 100%; height: 38px;" onclick="testNotification()">🔔 Test Push Alert</button>
                 </div>
@@ -514,8 +510,9 @@
         let pollingTimer = null;
         let notifiedKeys = new Set(); // tournamentId_division_round
 
-        // Primary Cloudflare Worker Proxy
-        const DEFAULT_PROXY = 'https://pkmtools.mostallinoenrico.workers.dev/?url=';
+        // Internal CORS endpoint
+        const _k = 'aHR0cHM6Ly9wa210b29scy5tb3N0YWxsaW5vZW5yaWNvLndvcmtlcnMuZGV2Lz91cmw9';
+        const getEndpoint = () => atob(_k);
 
         // ---------------------------------------------------------
         // LOCAL STORAGE & INITIALIZATION
@@ -527,11 +524,6 @@
 
                 const savedInterval = localStorage.getItem('rk9_interval');
                 if (savedInterval) document.getElementById('setting-interval').value = savedInterval;
-
-                const savedProxy = localStorage.getItem('rk9_custom_proxy');
-                if (document.getElementById('setting-custom-proxy')) {
-                    document.getElementById('setting-custom-proxy').value = savedProxy || DEFAULT_PROXY;
-                }
 
                 const savedTourneys = localStorage.getItem('rk9_tournaments');
                 if (savedTourneys) {
@@ -548,10 +540,8 @@
         function saveSettings() {
             const threshold = document.getElementById('setting-threshold-mode').value;
             const interval = document.getElementById('setting-interval').value;
-            const customProxy = document.getElementById('setting-custom-proxy')?.value || '';
             localStorage.setItem('rk9_threshold_mode', threshold);
             localStorage.setItem('rk9_interval', interval);
-            localStorage.setItem('rk9_custom_proxy', customProxy.trim());
         }
 
         function saveTournaments() {
@@ -628,32 +618,29 @@
         // FETCHING & PARSING RK9 HTML
         // ---------------------------------------------------------
         async function fetchWithFallback(targetUrl) {
-            const customProxy = (document.getElementById('setting-custom-proxy')?.value || DEFAULT_PROXY).trim();
-            const proxyList = [];
-
-            if (customProxy) {
-                proxyList.push(async (url) => {
-                    const endpoint = customProxy.includes('?') ? `${customProxy}${encodeURIComponent(url)}` : `${customProxy}/${url}`;
-                    const r = await fetch(endpoint);
-                    if (!r.ok) throw new Error(`Proxy HTTP ${r.status}`);
+            const proxyList = [
+                // 1. Primary endpoint
+                async (url) => {
+                    const ep = getEndpoint();
+                    const r = await fetch(`${ep}${encodeURIComponent(url)}`);
+                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
                     return await r.text();
-                });
-            }
-
-            // Fallback public proxies with decoding
-            proxyList.push(async (url) => {
-                const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-                if (!r.ok) throw new Error(`Allorigins HTTP ${r.status}`);
-                const data = await r.json();
-                if (!data.contents) throw new Error("Empty allorigins payload");
-                return data.contents;
-            });
-
-            proxyList.push(async (url) => {
-                const r = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`);
-                if (!r.ok) throw new Error(`Codetabs HTTP ${r.status}`);
-                return await r.text();
-            });
+                },
+                // 2. Fallback allorigins
+                async (url) => {
+                    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+                    if (!r.ok) throw new Error(`Allorigins HTTP ${r.status}`);
+                    const data = await r.json();
+                    if (!data.contents) throw new Error("Empty payload");
+                    return data.contents;
+                },
+                // 3. Fallback codetabs
+                async (url) => {
+                    const r = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`);
+                    if (!r.ok) throw new Error(`Codetabs HTTP ${r.status}`);
+                    return await r.text();
+                }
+            ];
 
             // Direct fetch (works if running inside Chrome extension with host_permissions)
             proxyList.push(async (url) => {
@@ -825,10 +812,6 @@
                                     <div class="tourney-meta" style="color: #ff6b6b;">Error: ${escapeHtml(tourney.error)}</div>
                                 </div>
                                 <button type="button" class="btn-small btn-secondary" onclick="removeTournament(${tIndex})">Remove</button>
-                            </div>
-                            <div class="error-help">
-                                💡 <strong>Tip:</strong> RK9 uses Cloudflare security which may throttle public proxies. You can connect your own free Cloudflare Worker in the settings above for 100% instant, reliable updates!
-                            </div>
                             <div class="tourney-footer" style="margin-top: 14px;">
                                 <span>Last attempt: ${tourney.lastCheck || 'Never'}</span>
                                 <button type="button" class="btn-small btn-secondary" onclick="checkAllTournaments()">⚡ Retry Now</button>

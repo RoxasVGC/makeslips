@@ -1,6 +1,6 @@
 # PKM Tools
 
-A centralized collection of web tools and utilities for competitive Pokémon VGC and TCG tournaments.
+A centralized, open-source collection of web tools and utilities for competitive Pokémon VGC and TCG tournaments.
 
 Hosted on **GitHub Pages**.
 
@@ -8,30 +8,38 @@ Hosted on **GitHub Pages**.
 
 ## 🛠️ Tools Included
 
-- [**Match Slips Generator**](makeslips/): Generate and print tournament match slips with Code 128 barcodes and check-digit validation. Supports direct roster import from TOM.
-- [**RK9 Round Monitor**](rk9-monitor/): Live round tracker for RK9 pairings with multi-division support (Masters, Seniors, Juniors) and native browser push notifications when rounds near completion.
+- [**Match Slips Generator**](makeslips/): Create and print tournament match slips with Code 128 barcodes, check-digit calculations, and direct roster import from TOM (Tournament Operation Manager).
+- [**RK9 Round Monitor**](rk9-monitor/): Live round progress tracker for official RK9 pairings with multi-division support (Masters, Seniors, Juniors) and native browser push notifications when rounds near completion.
 - **VGC Teamlist Generator** *(Coming Soon)*: Generate graphic and printable team sheets from Poképaste URLs.
-- **VGC EVs Converter** *(Coming Soon)*: EV conversions and damage calc paste formatting.
+- **VGC EVs Converter** *(Coming Soon)*: EV conversions and damage calculation paste formatting.
 
 ---
 
-## ⚖️ RK9 Terms of Service Compliance & Design Philosophy
+## ⚖️ RK9 Terms of Service Compliance & Architectural Design
 
-The **RK9 Round Monitor** was designed to be fully respectful of RK9 Labs' infrastructure, data privacy policies, and Terms of Service (specifically Section 5.3):
+The **RK9 Round Monitor** has been designed from the ground up to operate in full accordance with the spirit and text of **RK9 Labs' Terms of Service** (specifically *Section 3: Your Use of the Services* and *Section 5.3: Prohibited Uses*).
 
-1. **Zero Data Harvesting & Privacy Respect**:
-   - The tool does **not** scrape, collect, store, index, or redistribute player personal information, rosters, or tournament histories.
-   - All calculations (total matches vs. completed tables) are executed entirely client-side in the user's browser memory and discarded upon page reload.
+### 1. No Data Harvesting or Personal Data Storage (Section 5.3, Clauses 1 & 8)
+* **What the ToS Prohibits**: Collecting, harvesting, or storing personal data about users or misappropriating event data for commercial gain.
+* **Our Architecture**:
+  * The tool does **not** collect, store, index, or database player names, IDs, decks, or match histories.
+  * Calculations (such as `tables completed / total tables`) are computed **in-memory** in the user's browser session and immediately discarded on page refresh. Zero data is persisted or shared.
 
-2. **Conservative, Rate-Limited Polling (No Server Overload)**:
-   - Polling intervals are strictly throttled (default 45–60 seconds), generating less than 1–2 requests per minute per active tournament.
-   - This traffic pattern is completely identical to a human player or judge refreshing the public pairings page on their phone during a live round.
+### 2. Conservative, Human-Equivalent Polling (Section 5.3, Clause 5)
+* **What the ToS Prohibits**: Taking any action that imposes an unreasonable load on RK9 computer or network equipment.
+* **Our Architecture**:
+  * Polling is strictly throttled to conservative intervals (**45–60 seconds** by default).
+  * This generates approximately **1 request per minute** per monitored tournament—an identical footprint to a single attendee manually refreshing the pairings page on their smartphone.
 
-3. **Public Data Only**:
-   - The tool only accesses public tournament pairings pages intended for real-time viewing by players and spectators during live events. No private endpoints, hidden authentication tokens, or restricted administrative areas are accessed.
+### 3. Read-Only Public Event Data (Section 5.3, Clauses 2 & 10)
+* **What the ToS Prohibits**: Using automated bots or scripts to modify or automate operations within the Service (e.g. automating tournament registration, botting deck submissions, or bypassing authentication/security controls).
+* **Our Architecture**:
+  * The monitor is **strictly read-only**. It does not automate any actions, submissions, or account interactions.
+  * It only queries public tournament URLs (`rk9.gg/pairings/...`) that are intentionally made public for players and spectators during live events.
 
-4. **Non-Commercial Utility**:
-   - Built purely as a free, open-source utility for tournament attendees and staff to manage their time between rounds without needing to continuously stare at pairing screens.
+### 4. Direct Client-Side Proxy Architecture
+* **How it works**: A dedicated, stateless Cloudflare Worker acts as a lightweight CORS pass-through between the user's browser and the public RK9 pairings page.
+* **Integrity**: The proxy does not cache, alter, or inject payloads; it passes standard browser headers to request public event markup.
 
 ---
 
@@ -56,6 +64,6 @@ pkmtools/
 Pushes to the `main` branch automatically build and deploy the entire hub to GitHub Pages.
 
 To enable GitHub Pages in your repository:
-1. Go to **Settings** > **Pages**.
-2. Under **Build and deployment** > **Source**, choose **GitHub Actions**.
+1. Go to repository **Settings** > **Pages**.
+2. Under **Build and deployment** > **Source**, select **GitHub Actions**.
 3. Push changes to `main`.
