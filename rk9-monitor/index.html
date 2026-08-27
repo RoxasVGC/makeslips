@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RK9 Round Monitor | PKM Tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0c0c16;
+            --surf: #141422;
+            --surf2: #1c1c30;
+            --bord: #2c2c48;
+            --bord-light: #3e3e68;
+            --acc: #e63946;
+            --acc2: #ffd166;
+            --acc-green: #2ec4b6;
+            --txt: #f0f0f8;
+            --muted: #8c8caa;
+            --r: 12px;
+            --fh: 'Bebas Neue', sans-serif;
+            --fb: 'Nunito', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--txt);
+            font-family: var(--fb);
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px 16px;
+            display: flex;
+            justify-content: center;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 20% 20%, rgba(230, 57, 70, 0.07) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 80%, rgba(255, 209, 102, 0.05) 0%, transparent 60%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 960px;
+            width: 100%;
+        }
+
+        .back-link {
+            color: var(--acc2);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 20px;
+            transition: color 0.15s ease;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+
+        header.hdr {
+            margin-bottom: 28px;
+        }
+
+        header.hdr h1 {
+            font-family: var(--fh);
+            font-size: clamp(2.5rem, 6vw, 3.8rem);
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, #fff 0%, var(--acc2) 50%, var(--acc) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 6px 0;
+        }
+
+        header.hdr p {
+            color: var(--muted);
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        /* Banner */
+        .banner {
+            padding: 14px 18px;
+            border-radius: var(--r);
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            font-size: 14px;
+            background: var(--surf2);
+            border: 1px solid var(--bord);
+        }
+
+        .banner.banner-warning {
+            background: rgba(255, 209, 102, 0.12);
+            border-color: var(--acc2);
+            color: #fff;
+        }
+
+        .banner.banner-success {
+            background: rgba(46, 196, 182, 0.12);
+            border-color: var(--acc-green);
+            color: #fff;
+        }
+
+        /* Control Card */
+        .panel {
+            background: var(--surf);
+            border: 1px solid var(--bord);
+            border-radius: var(--r);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .panel-title {
+            font-family: var(--fh);
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+            color: var(--acc2);
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        input[type="text"], select, input[type="number"] {
+            width: 100%;
+            padding: 11px 14px;
+            background: var(--surf2);
+            border: 1px solid var(--bord);
+            border-radius: 8px;
+            color: #fff;
+            font-family: var(--fb);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        input[type="text"]:focus, select:focus, input[type="number"]:focus {
+            border-color: var(--acc2);
+        }
+
+        button {
+            padding: 10px 20px;
+            background: var(--acc);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-family: var(--fb);
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.1s ease, background 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        button:hover {
+            background: #d62839;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--surf2);
+            border: 1px solid var(--bord);
+            color: var(--txt);
+        }
+
+        .btn-secondary:hover {
+            background: #282846;
+            border-color: var(--bord-light);
+        }
+
+        .btn-success {
+            background: var(--acc-green);
+            color: #0c0c16;
+        }
+
+        .btn-success:hover {
+            background: #25a89b;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        /* Settings row */
+        .settings-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            padding-top: 14px;
+            border-top: 1px solid var(--bord);
+        }
+
+        .setting-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Tournament Live Cards */
+        .tournament-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .tourney-card {
+            background: var(--surf);
+            border: 1px solid var(--bord);
+            border-radius: var(--r);
+            padding: 22px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transition: border-color 0.2s ease;
+        }
+
+        .tourney-card.status-alert {
+            border-color: var(--acc);
+            box-shadow: 0 0 16px rgba(230, 57, 70, 0.3);
+        }
+
+        .tourney-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--acc), var(--acc2));
+            border-radius: var(--r) var(--r) 0 0;
+        }
+
+        .tourney-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .tourney-title h3 {
+            margin: 0 0 4px 0;
+            font-size: 1.25rem;
+            color: #fff;
+        }
+
+        .tourney-meta {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .division-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .div-chip {
+            padding: 6px 14px;
+            border-radius: 99px;
+            background: var(--surf2);
+            border: 1px solid var(--bord);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .div-chip:hover {
+            border-color: var(--bord-light);
+            color: #fff;
+        }
+
+        .div-chip.active {
+            background: var(--acc);
+            border-color: var(--acc);
+            color: #fff;
+        }
+
+        /* Stats Display */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 18px;
+            align-items: center;
+            background: var(--surf2);
+            padding: 16px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--bord);
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pending-highlight {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pending-number {
+            font-family: var(--fh);
+            font-size: 3rem;
+            line-height: 1;
+            color: var(--acc2);
+        }
+
+        .pending-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        .progress-block {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 12px;
+            background: #0f0f18;
+            border-radius: 99px;
+            overflow: hidden;
+            border: 1px solid var(--bord);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--acc-green), var(--acc2));
+            border-radius: 99px;
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+
+        .tourney-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--muted);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 99px;
+            text-transform: uppercase;
+        }
+
+        .badge-live {
+            background: rgba(46, 196, 182, 0.15);
+            color: var(--acc-green);
+        }
+
+        .badge-alert {
+            background: rgba(230, 57, 70, 0.18);
+            color: var(--acc);
+            animation: pulseAlert 1.5s infinite;
+        }
+
+        @keyframes pulseAlert {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--muted);
+        }
+
+        .empty-state h3 {
+            font-family: var(--fh);
+            font-size: 1.8rem;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <a href="../" class="back-link">← Back to PKM Tools</a>
+
+        <header class="hdr">
+            <h1>RK9 ROUND MONITOR</h1>
+            <p>Real-time tournament round progress tracker & browser push notifications</p>
+        </header>
+
+        <!-- Notification Permission Banner -->
+        <div id="notif-banner" class="banner banner-warning">
+            <div>
+                <strong>🔔 Notifications Disabled:</strong> Enable browser notifications to receive alerts when rounds are ending!
+            </div>
+            <button type="button" class="btn-small btn-success" onclick="requestNotificationPermission()">Enable Notifications</button>
+        </div>
+
+        <!-- Add Tournament Panel -->
+        <div class="panel">
+            <div class="panel-title">
+                <span>Add Tournament to Monitor</span>
+            </div>
+            <div class="form-grid">
+                <input type="text" id="tourney-url-input" placeholder="Paste RK9 pairings URL (e.g. https://rk9.gg/pairings/TU02wKzv4cT2BBiI9dEg)...">
+                <button type="button" onclick="addTournamentFromInput()">+ Add Tournament</button>
+            </div>
+
+            <!-- Settings -->
+            <div class="settings-bar">
+                <div class="setting-group">
+                    <label>Alert Trigger Condition</label>
+                    <select id="setting-threshold-mode" onchange="saveSettings()">
+                        <option value="tables_5">When ≤ 5 tables remain</option>
+                        <option value="tables_10">When ≤ 10 tables remain</option>
+                        <option value="tables_15">When ≤ 15 tables remain</option>
+                        <option value="percent_5">When ≤ 5% tables remain</option>
+                        <option value="percent_10" selected>When ≤ 10% tables remain</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>Check Interval</label>
+                    <select id="setting-interval" onchange="saveSettings(); updateIntervalTimer();">
+                        <option value="30">Every 30 seconds</option>
+                        <option value="45" selected>Every 45 seconds</option>
+                        <option value="60">Every 60 seconds</option>
+                        <option value="90">Every 90 seconds</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>Test Notification</label>
+                    <button type="button" class="btn-secondary btn-small" style="width: 100%; height: 42px;" onclick="testNotification()">🔔 Test Push Alert</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tournaments Monitor List -->
+        <div id="tournaments-container" class="tournament-list"></div>
+    </div>
+
+    <script>
+        // State
+        let tournaments = [];
+        let pollingTimer = null;
+        let countdownTimer = null;
+        let nextCheckTimestamp = 0;
+        let notifiedKeys = new Set(); // tournamentId_division_round
+
+        // Default sample tournament if empty
+        const DEFAULT_URL = 'https://rk9.gg/pairings/TU02wKzv4cT2BBiI9dEg';
+
+        // Multi-proxy endpoints with automatic fallback
+        const PROXIES = [
+            (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+            (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+            (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+        ];
+
+        // ---------------------------------------------------------
+        // LOCAL STORAGE & INITIALIZATION
+        // ---------------------------------------------------------
+        function loadSettings() {
+            try {
+                const savedThreshold = localStorage.getItem('rk9_threshold_mode');
+                if (savedThreshold) document.getElementById('setting-threshold-mode').value = savedThreshold;
+
+                const savedInterval = localStorage.getItem('rk9_interval');
+                if (savedInterval) document.getElementById('setting-interval').value = savedInterval;
+
+                const savedTourneys = localStorage.getItem('rk9_tournaments');
+                if (savedTourneys) {
+                    tournaments = JSON.parse(savedTourneys);
+                } else {
+                    // Seed with default sample
+                    tournaments = [{
+                        url: DEFAULT_URL,
+                        id: extractTournamentId(DEFAULT_URL),
+                        selectedDivision: null,
+                        lastData: null,
+                        error: null,
+                        lastCheck: null
+                    }];
+                    saveTournaments();
+                }
+            } catch (e) {
+                console.error("Error loading settings:", e);
+            }
+        }
+
+        function saveSettings() {
+            const threshold = document.getElementById('setting-threshold-mode').value;
+            const interval = document.getElementById('setting-interval').value;
+            localStorage.setItem('rk9_threshold_mode', threshold);
+            localStorage.setItem('rk9_interval', interval);
+        }
+
+        function saveTournaments() {
+            localStorage.setItem('rk9_tournaments', JSON.stringify(tournaments.map(t => ({
+                url: t.url,
+                id: t.id,
+                selectedDivision: t.selectedDivision
+            }))));
+        }
+
+        function extractTournamentId(url) {
+            const match = (url || '').match(/\/pairings\/([a-zA-Z0-9_-]+)/);
+            return match ? match[1] : (url || '').trim();
+        }
+
+        // ---------------------------------------------------------
+        // NOTIFICATIONS
+        // ---------------------------------------------------------
+        function checkNotificationPermission() {
+            const banner = document.getElementById('notif-banner');
+            if (!("Notification" in window)) {
+                if (banner) {
+                    banner.className = 'banner banner-warning';
+                    banner.innerHTML = '⚠️ Your browser does not support Web Notifications.';
+                }
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                if (banner) banner.style.display = 'none';
+            } else if (Notification.permission === 'denied') {
+                if (banner) {
+                    banner.style.display = 'flex';
+                    banner.className = 'banner banner-warning';
+                    banner.innerHTML = '⚠️ <strong>Notifications Blocked:</strong> Please allow notifications in your browser address bar settings.';
+                }
+            } else {
+                if (banner) banner.style.display = 'flex';
+            }
+        }
+
+        async function requestNotificationPermission() {
+            if (!("Notification" in window)) return;
+            const perm = await Notification.requestPermission();
+            checkNotificationPermission();
+            if (perm === 'granted') {
+                sendNotification("🔔 Notifications Enabled", "You will receive alerts when tournament rounds are nearing completion!");
+            }
+        }
+
+        function sendNotification(title, body) {
+            if ("Notification" in window && Notification.permission === 'granted') {
+                try {
+                    new Notification(title, {
+                        body: body,
+                        icon: 'https://rk9.gg/static/favicon.ico',
+                        tag: 'rk9-alert-' + Date.now()
+                    });
+                } catch (e) {
+                    console.error("Notification trigger error:", e);
+                }
+            }
+        }
+
+        function testNotification() {
+            if (Notification.permission !== 'granted') {
+                requestNotificationPermission();
+            } else {
+                sendNotification("🏆 RK9 Round Monitor (Test)", "Round 5: Only 4 tables remaining (96.5% completed)!");
+            }
+        }
+
+        // ---------------------------------------------------------
+        // FETCHING & PARSING RK9 HTML
+        // ---------------------------------------------------------
+        async function fetchWithFallback(targetUrl) {
+            let lastErr = null;
+            for (let i = 0; i < PROXIES.length; i++) {
+                try {
+                    const proxyUrl = PROXIES[i](targetUrl);
+                    const resp = await fetch(proxyUrl, { cache: 'no-store' });
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    const html = await resp.text();
+                    if (html && (html.includes('Tournament Pairings') || html.includes('nav-pills') || html.includes('tab-content'))) {
+                        return html;
+                    }
+                } catch (err) {
+                    lastErr = err;
+                }
+            }
+            throw new Error(lastErr ? lastErr.message : "Failed to fetch tournament page across all CORS proxies.");
+        }
+
+        function parseRk9Html(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            // Tournament Title & Subtitle
+            let title = "Tournament Pairings";
+            const h4Title = doc.querySelector('h4.mb-0');
+            if (h4Title) title = h4Title.textContent.trim();
+
+            const dateH5 = doc.querySelector('h5.my-0');
+            let dateStr = dateH5 ? dateH5.textContent.split('\n')[0].trim() : '';
+
+            // Extract Divisions
+            const divisions = [];
+            const pillLinks = doc.querySelectorAll('ul.nav-pills li.nav-item a.nav-link');
+
+            pillLinks.forEach(link => {
+                const targetId = (link.getAttribute('href') || '').replace('#', '');
+                const rawName = link.textContent.trim(); // e.g. "Masters in Round 16"
+                
+                // Parse division name & current round
+                let divName = rawName;
+                let roundNum = 1;
+                const match = rawName.match(/^(.*?)\s+in\s+Round\s+(\d+)/i);
+                if (match) {
+                    divName = match[1].trim();
+                    roundNum = parseInt(match[2], 10);
+                }
+
+                // Check division tab pane
+                const divPane = doc.getElementById(targetId);
+                let totalMatches = 0;
+                let pendingMatches = 0;
+                let completedMatches = 0;
+
+                if (divPane) {
+                    // Find active round tab
+                    const activeRoundTab = divPane.querySelector('.current-tables.active, .current-tables.show') || 
+                                           divPane.querySelector('.current-tables');
+                    
+                    if (activeRoundTab) {
+                        const allMatches = activeRoundTab.querySelectorAll('.match');
+                        totalMatches = Math.max(0, allMatches.length - 1); // subtract 1 for header
+                        completedMatches = activeRoundTab.querySelectorAll('.match.complete').length;
+                        pendingMatches = Math.max(0, totalMatches - completedMatches);
+                    }
+                }
+
+                const percentComplete = totalMatches > 0 ? ((completedMatches / totalMatches) * 100).toFixed(1) : '100.0';
+
+                divisions.push({
+                    id: targetId,
+                    name: divName,
+                    round: roundNum,
+                    rawLabel: rawName,
+                    totalMatches,
+                    completedMatches,
+                    pendingMatches,
+                    percentComplete: parseFloat(percentComplete)
+                });
+            });
+
+            return {
+                title,
+                dateStr,
+                divisions
+            };
+        }
+
+        // ---------------------------------------------------------
+        // TOURNAMENT MONITOR & ALERT ENGINE
+        // ---------------------------------------------------------
+        async function checkAllTournaments() {
+            const intervalSec = parseInt(document.getElementById('setting-interval').value, 10) || 45;
+            nextCheckTimestamp = Date.now() + (intervalSec * 1000);
+
+            for (const tourney of tournaments) {
+                try {
+                    const html = await fetchWithFallback(tourney.url);
+                    const data = parseRk9Html(html);
+                    tourney.lastData = data;
+                    tourney.error = null;
+                    tourney.lastCheck = new Date().toLocaleTimeString();
+
+                    // Evaluate alert conditions
+                    evaluateAlerts(tourney);
+                } catch (err) {
+                    console.error("Error fetching tournament:", tourney.url, err);
+                    tourney.error = err.message;
+                    tourney.lastCheck = new Date().toLocaleTimeString();
+                }
+            }
+
+            renderTournaments();
+        }
+
+        function evaluateAlerts(tourney) {
+            if (!tourney.lastData || !tourney.lastData.divisions) return;
+            const thresholdSetting = document.getElementById('setting-threshold-mode').value;
+
+            tourney.lastData.divisions.forEach(div => {
+                // If round has no tables, skip
+                if (div.totalMatches === 0) return;
+
+                let shouldAlert = false;
+                if (thresholdSetting === 'tables_5' && div.pendingMatches <= 5) shouldAlert = true;
+                else if (thresholdSetting === 'tables_10' && div.pendingMatches <= 10) shouldAlert = true;
+                else if (thresholdSetting === 'tables_15' && div.pendingMatches <= 15) shouldAlert = true;
+                else if (thresholdSetting === 'percent_5' && ((div.pendingMatches / div.totalMatches) * 100) <= 5) shouldAlert = true;
+                else if (thresholdSetting === 'percent_10' && ((div.pendingMatches / div.totalMatches) * 100) <= 10) shouldAlert = true;
+
+                const alertKey = `${tourney.id}_${div.name}_${div.round}`;
+
+                if (shouldAlert && !notifiedKeys.has(alertKey)) {
+                    notifiedKeys.add(alertKey);
+                    const title = `🏆 ${tourney.lastData.title}`;
+                    const body = `${div.name} Round ${div.round}: Only ${div.pendingMatches} tables remaining (${div.percentComplete}% completed)!`;
+                    sendNotification(title, body);
+                }
+            });
+        }
+
+        // ---------------------------------------------------------
+        // UI RENDERING & INTERACTIONS
+        // ---------------------------------------------------------
+        function renderTournaments() {
+            const container = document.getElementById('tournaments-container');
+            if (!container) return;
+
+            if (tournaments.length === 0) {
+                container.innerHTML = `
+                    <div class="panel empty-state">
+                        <h3>No Tournaments Added</h3>
+                        <p>Paste an RK9 pairings link above to start tracking round progress in real time.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            tournaments.forEach((tourney, tIndex) => {
+                const data = tourney.lastData;
+                const hasError = !!tourney.error;
+
+                if (hasError) {
+                    html += `
+                        <div class="tourney-card">
+                            <div class="tourney-header">
+                                <div class="tourney-title">
+                                    <h3>${escapeHtml(tourney.url)}</h3>
+                                    <div class="tourney-meta" style="color: #ff6b6b;">Error: ${escapeHtml(tourney.error)}</div>
+                                </div>
+                                <button type="button" class="btn-small btn-secondary" onclick="removeTournament(${tIndex})">Remove</button>
+                            </div>
+                            <div class="tourney-footer">
+                                <span>Last attempt: ${tourney.lastCheck || 'Never'}</span>
+                                <button type="button" class="btn-small btn-secondary" onclick="checkAllTournaments()">Retry Now</button>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (!data) {
+                    html += `
+                        <div class="tourney-card">
+                            <div class="tourney-header">
+                                <div class="tourney-title">
+                                    <h3>Loading Tournament Data...</h3>
+                                    <div class="tourney-meta">${escapeHtml(tourney.url)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Determine active selected division
+                const activeDivId = tourney.selectedDivision || (data.divisions[0] ? data.divisions[0].id : null);
+                const activeDiv = data.divisions.find(d => d.id === activeDivId) || data.divisions[0] || {
+                    name: 'Division', round: 1, totalMatches: 0, completedMatches: 0, pendingMatches: 0, percentComplete: 0
+                };
+
+                const isNearEnd = activeDiv.totalMatches > 0 && activeDiv.pendingMatches <= 10;
+
+                html += `
+                    <div class="tourney-card ${isNearEnd ? 'status-alert' : ''}">
+                        <div class="tourney-header">
+                            <div class="tourney-title">
+                                <h3>${escapeHtml(data.title)}</h3>
+                                <div class="tourney-meta">${escapeHtml(data.dateStr || tourney.url)}</div>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" class="btn-small btn-secondary" onclick="removeTournament(${tIndex})">Remove</button>
+                            </div>
+                        </div>
+
+                        <!-- Division Tabs -->
+                        <div class="division-nav">
+                            ${data.divisions.map(d => `
+                                <div class="div-chip ${d.id === activeDivId ? 'active' : ''}" onclick="selectDivision(${tIndex}, '${d.id}')">
+                                    ${escapeHtml(d.name)} &bull; R${d.round}
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <!-- Stats Box -->
+                        <div class="stats-grid">
+                            <div class="pending-highlight">
+                                <span class="pending-number">${activeDiv.pendingMatches}</span>
+                                <span class="pending-label">Tables Remaining</span>
+                            </div>
+                            <div class="progress-block">
+                                <div class="progress-text">
+                                    <span>${activeDiv.completedMatches} / ${activeDiv.totalMatches} Tables Done</span>
+                                    <span>${activeDiv.percentComplete}%</span>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: ${activeDiv.percentComplete}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tourney-footer">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span class="status-badge ${isNearEnd ? 'badge-alert' : 'badge-live'}">
+                                    ${isNearEnd ? '⚠️ Round Ending Soon' : '● Live Monitoring'}
+                                </span>
+                                <span>Updated: ${tourney.lastCheck || 'Just now'}</span>
+                            </div>
+                            <button type="button" class="btn-small btn-secondary" onclick="checkAllTournaments()">⚡ Refresh Now</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function selectDivision(tourneyIndex, divId) {
+            if (tournaments[tourneyIndex]) {
+                tournaments[tourneyIndex].selectedDivision = divId;
+                saveTournaments();
+                renderTournaments();
+            }
+        }
+
+        function addTournamentFromInput() {
+            const input = document.getElementById('tourney-url-input');
+            const url = (input.value || '').trim();
+
+            if (!url) {
+                alert("Please paste an RK9 pairings URL.");
+                return;
+            }
+
+            const id = extractTournamentId(url);
+            if (tournaments.some(t => t.id === id)) {
+                alert("This tournament is already in your monitor list.");
+                return;
+            }
+
+            tournaments.unshift({
+                url: url,
+                id: id,
+                selectedDivision: null,
+                lastData: null,
+                error: null,
+                lastCheck: null
+            });
+
+            input.value = '';
+            saveTournaments();
+            renderTournaments();
+            checkAllTournaments();
+        }
+
+        function removeTournament(index) {
+            tournaments.splice(index, 1);
+            saveTournaments();
+            renderTournaments();
+        }
+
+        function updateIntervalTimer() {
+            if (pollingTimer) clearInterval(pollingTimer);
+            const intervalSec = parseInt(document.getElementById('setting-interval').value, 10) || 45;
+            pollingTimer = setInterval(checkAllTournaments, intervalSec * 1000);
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // ---------------------------------------------------------
+        // INITIAL LOAD
+        // ---------------------------------------------------------
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            checkNotificationPermission();
+            renderTournaments();
+            checkAllTournaments();
+            updateIntervalTimer();
+        });
+    </script>
+</body>
+</html>
