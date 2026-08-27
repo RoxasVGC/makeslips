@@ -1,892 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Match Slips Generator</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PKM Tools | Tournament & VGC Utilities</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        /* Screen UI styles */
-        @media screen {
-            body {
-                background-color: #121212;
-                color: #e0e0e0;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-                margin: 0;
-                padding: 20px;
-            }
-
-            #ui-container {
-                background: #1e1e1e;
-                padding: 24px;
-                margin: 0 auto;
-                max-width: 900px;
-                border-radius: 8px;
-                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-                border: 1px solid #333;
-            }
-
-            h2, h3, h4 {
-                color: #fff;
-                margin-top: 0;
-            }
-
-            .form-group {
-                margin-bottom: 14px;
-            }
-
-            .form-group label {
-                display: block;
-                font-weight: 600;
-                font-size: 13px;
-                margin-bottom: 6px;
-                color: #bbb;
-            }
-
-            .form-group input, .form-group select {
-                width: 100%;
-                padding: 9px 10px;
-                box-sizing: border-box;
-                background: #2a2a2a;
-                border: 1px solid #444;
-                color: #fff;
-                border-radius: 5px;
-                font-size: 14px;
-            }
-
-            .form-group input:focus, .form-group select:focus {
-                outline: none;
-                border-color: #007bff;
-            }
-
-            .match-entry {
-                border: 1px solid #333;
-                padding: 16px;
-                margin-bottom: 14px;
-                border-radius: 6px;
-                background: #252525;
-            }
-
-            .flex-row {
-                display: flex;
-                gap: 14px;
-            }
-
-            .flex-col {
-                flex: 1;
-            }
-
-            button {
-                padding: 9px 16px;
-                cursor: pointer;
-                background: #007bff;
-                color: #fff;
-                border: none;
-                border-radius: 5px;
-                font-weight: 600;
-                font-size: 14px;
-                transition: background 0.15s ease;
-            }
-
-            button:hover { background: #0056b3; }
-            .btn-danger { background: #dc3545; }
-            .btn-danger:hover { background: #b02a37; }
-            .btn-secondary { background: #4a4a4a; }
-            .btn-secondary:hover { background: #5a5a5a; }
-            .btn-info { background: #17a2b8; color: #fff; }
-            .btn-info:hover { background: #138496; }
-            .btn-success { background: #198754; }
-            .btn-success:hover { background: #157347; }
-
-            .actions-bar {
-                display: flex;
-                gap: 10px;
-                margin: 14px 0;
-                flex-wrap: wrap;
-                align-items: center;
-            }
-
-            .alert-box {
-                padding: 10px 14px;
-                margin-bottom: 16px;
-                border-radius: 6px;
-                background-color: #1a3a5a;
-                border-left: 4px solid #0d6efd;
-                color: #cce5ff;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                font-size: 14px;
-            }
-
-            .alert-box.alert-error {
-                background-color: #4a1d24;
-                border-left-color: #dc3545;
-                color: #f8d7da;
-            }
-
-            .alert-box button {
-                background: transparent;
-                border: 1px solid currentColor;
-                color: inherit;
-                padding: 3px 8px;
-                font-size: 12px;
-                margin-left: 10px;
-            }
-
-            hr {
-                margin: 20px 0;
-                border: none;
-                border-top: 1px solid #333;
-            }
-
-            /* Modal */
-            .modal-overlay {
-                position: fixed;
-                top: 0; left: 0; right: 0; bottom: 0;
-                background: rgba(0, 0, 0, 0.7);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-                padding: 20px;
-                box-sizing: border-box;
-            }
-
-            .modal-card {
-                background: #1e1e1e;
-                color: #fff;
-                border-radius: 8px;
-                max-width: 720px;
-                width: 100%;
-                max-height: 90vh;
-                display: flex;
-                flex-direction: column;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-                border: 1px solid #333;
-            }
-
-            .modal-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 16px 20px;
-                border-bottom: 1px solid #333;
-            }
-
-            .modal-header h3 { margin: 0; font-size: 18px; }
-
-            .modal-close {
-                background: none;
-                border: none;
-                font-size: 24px;
-                line-height: 1;
-                cursor: pointer;
-                color: #888;
-                padding: 0 5px;
-            }
-
-            .modal-close:hover { color: #fff; background: none; }
-            .modal-body { padding: 20px; overflow-y: auto; }
-
-            .modal-footer {
-                padding: 14px 20px;
-                border-top: 1px solid #333;
-                display: flex;
-                justify-content: flex-end;
-                gap: 10px;
-                background: #181818;
-                border-radius: 0 0 8px 8px;
-            }
+        :root {
+            --bg: #0c0c16;
+            --surf: #13131f;
+            --surf2: #1c1c2e;
+            --bord: #2c2c48;
+            --acc: #e63946;
+            --acc2: #ffd166;
+            --txt: #f0f0f8;
+            --muted: #7777aa;
+            --r: 12px;
+            --fh: 'Bebas Neue', sans-serif;
+            --fb: 'Nunito', sans-serif;
         }
 
-        /* Match slip print layout */
-        @media print {
-            #ui-container, .modal-overlay { display: none !important; }
-            body { background: white; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
         }
 
-        .match_slip {
-            width: 700px;
-            padding: 0;
-            page-break-before: avoid;
-            page-break-inside: avoid;
-            page-break-after: avoid;
-            orphans: 0;
-            widows: 0;
+        body {
+            background: var(--bg);
+            color: var(--txt);
+            font-family: var(--fb);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
         }
 
-        .table-font-size { font-size: 10pt; }
-        .barcode { border: none; }
-        
-        .player-1-barcode img, .player-2-barcode img, .tie-barcode img {
-            transform: rotate(90deg) translate(-86px, 15px);
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 20% 40%, rgba(230,57,70,.08) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 20%, rgba(255,209,102,.05) 0%, transparent 60%);
+            z-index: 0;
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            width: 100%;
+            padding: 60px 20px;
+        }
+
+        .hdr {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .hdr h1 {
+            font-family: var(--fh);
+            font-size: clamp(3.2rem, 8vw, 5rem);
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, #fff 0%, var(--acc2) 50%, var(--acc) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 10px 0;
+        }
+
+        .hdr p {
+            color: var(--muted);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--surf);
+            border: 1px solid var(--bord);
+            border-radius: var(--r);
+            padding: 28px;
+            position: relative;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        a.card:hover {
+            transform: translateY(-4px);
+            border-color: var(--acc2);
+        }
+
+        .card::before {
+            content: '';
             position: absolute;
-            width: 25px;
-            height: 200px;
+            top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--acc), var(--acc2));
+            border-radius: var(--r) var(--r) 0 0;
         }
 
-        table {
-            font-family: Verdana, Arial, Helvetica, sans-serif;
-            padding: 0;
-            border-spacing: 0;
-            border-collapse: collapse;
+        .card h2 {
+            font-family: var(--fh);
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+            margin: 0 0 10px 0;
+            color: var(--acc2);
         }
 
-        td {
-            font-family: Verdana, Arial, Helvetica, sans-serif;
-            border: 1px inset black;
-            background: white;
-            color: black;
+        .card p {
+            color: var(--muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            flex-grow: 1;
+            margin: 0 0 16px 0;
         }
 
-        @page {
-            size: 8.5in 11in;
-            margin: 0.22in 0.0in 0.0in 0.0in;
+        .badge {
+            align-self: flex-start;
+            padding: 4px 10px;
+            border-radius: 99px;
+            font-weight: 800;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .heading { font-variant: small-caps; text-align: center; vertical-align: middle; }
-        .small { font-size: 10px; }
-        .pagebreak { height: 0px; page-break-before: always; }
-        td.matchrecord { height: 50px; }
-        tr.nobottomborder td { border-bottom: none; }
-        tr.noleftborder td { border-left: none; }
-        tr.norightborder td { border-right: none; }
-        .noborders { border: none; }
-        tr.notopborder td { border-top: none; }
-        .match_slip_format { height: 216px; margin: 0 auto; border-collapse: separate; }
-        
-        .player-1-win { width: 40px; border-width: 0; border-style: solid none; border-color: #000; position: relative; }
-        .player-1-win-details { position: absolute; margin-top: 2px; width: 208px; height: 100px; text-align: left; overflow: hidden; top: 0; left: 0; transform-origin: left top; transform: rotate(90deg) translate(0px, -40px); }
-        .player-1-info { width: 180px; border-width: 2px 1px 2px 2px; border-style: none none none solid; border-color: #000; position: relative; }
-        .player-1-info-details { position: absolute; top: 0; left: 0; width: 212px; height: 180px; text-align: center; padding: 0; overflow: hidden; transform-origin: right top; transform: rotate(-90deg) translate(0px, -212px); }
-        
-        .tied-info { width: 260px; vertical-align: middle; border: 1px dashed #000; position: relative; }
-        .tied-info-details { margin-left: auto; margin-right: auto; text-align: center; padding: 0; overflow: auto; width: 100%; vertical-align: bottom; }
-        
-        .player-2-info { width: 180px; border-width: 2px 2px 2px 1px; border-style: none solid none none; border-color: #000; position: relative; }
-        .player-2-info-details { position: absolute; top: 0; left: 0; width: 212px; height: 180px; text-align: center; padding: 0; overflow: hidden; transform-origin: left top; transform: rotate(90deg) translate(0px, -177px); }
-        .player-2-win { width: 40px; border-width: 0; border-style: solid none; border-color: #000; position: relative; }
-        .player-2-win-details { position: absolute; margin-top: 2px; width: 208px; height: 100px; text-align: left; overflow: hidden; top: 0; right: 0; transform-origin: right top; transform: rotate(-90deg) translate(0px, -40px); }
-
-        .below-barcode-padding { padding-top: 0px; }
-        .tie-instructions { margin-top: 4px; }
-        hr.slip-separator { margin: 24px; border: 1px solid #000; }
-
-        .truncate-name {
-            display: block;
-            width: 190px;
-            margin: 0 auto;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-size: 20px;
-            font-weight: bold;
+        .badge.active {
+            background: rgba(40, 167, 69, 0.15);
+            color: #4ade80;
         }
 
-        .nat-line {
-            display: block;
-            font-size: 16px;
-            font-weight: bold;
-            min-height: 20px;
-            margin-bottom: 10px;
+        .badge.beta {
+            background: rgba(255, 209, 102, 0.15);
+            color: var(--acc2);
         }
 
-        .truncate-name-small {
-            display: inline-block;
-            max-width: 125px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            vertical-align: bottom;
+        .badge.soon {
+            background: rgba(230, 57, 70, 0.15);
+            color: var(--acc);
+        }
+
+        .card.disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        .ftr {
+            margin-top: 60px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.85rem;
         }
     </style>
 </head>
 <body>
+    <div class="wrap">
+        <header class="hdr">
+            <h1>PKM TOOLS</h1>
+            <p>Competitive Pokémon Tournament & VGC Utilities</p>
+        </header>
 
-    <div id="ui-container">
-        <h2>Match Slips Control Panel</h2>
+        <div class="project-grid">
+            <!-- Tool 1: Match Slips Generator -->
+            <a href="makeslips/" class="card">
+                <h2>Match Slips Generator</h2>
+                <p>Quickly generate and print match slips with Code 128 barcodes and check-digit validation. Supports direct roster import from TOM.</p>
+                <span class="badge active">Active Tool</span>
+            </a>
 
-        <div id="import-banner" class="alert-box" style="display: none;">
-            <span id="import-banner-text"></span>
-            <button type="button" onclick="dismissBanner()">Dismiss</button>
-        </div>
-        
-        <div class="flex-row">
-            <div class="form-group flex-col">
-                <label>Tournament Name</label>
-                <input type="text" id="tournamentName" value="Tournament">
+            <!-- Placeholder Tools -->
+            <div class="card disabled">
+                <h2>VGC Teamlist Generator</h2>
+                <p>Generate clean graphic team sheets and printable sheets from Poképaste URLs.</p>
+                <span class="badge soon">Coming Soon</span>
             </div>
-            <div class="form-group flex-col">
-                <label>Event Code (POD)</label>
-                <input type="text" id="podId" value="2">
+
+            <div class="card disabled">
+                <h2>VGC EVs Converter</h2>
+                <p>Convert EV spreads and damage calculation pastes between game generations and formats.</p>
+                <span class="badge soon">Coming Soon</span>
             </div>
-            <div class="form-group flex-col">
-                <label>Round Number</label>
-                <input type="number" id="roundNum" value="1">
+
+            <div class="card disabled">
+                <h2>Tournament Explorer</h2>
+                <p>Lookup pairings, standings, and historical results for official events.</p>
+                <span class="badge soon">Coming Soon</span>
             </div>
         </div>
 
-        <h3>Tables Management</h3>
-        <div class="actions-bar">
-            <button type="button" onclick="addTable()">+ Add Table</button>
-            <button type="button" class="btn-info" onclick="openTomModal()">Paste from TOM</button>
-            <button type="button" class="btn-secondary" onclick="clearAllTables()">Clear All</button>
-        </div>
-
-        <div id="matches-container"></div>
-
-        <hr>
-        <div class="actions-bar">
-            <button type="button" class="btn-success" onclick="generateSlips()">Generate Match Slips</button>
-            <button type="button" class="btn-info" onclick="window.print()">Print</button>
-            <button type="button" class="btn-secondary" onclick="clearSlips()">Clear Slips</button>
-        </div>
+        <footer class="ftr">
+            <p>PKM Tools &bull; Hosted on GitHub Pages</p>
+        </footer>
     </div>
-
-    <!-- TOM Import Modal -->
-    <div id="tom-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3>Paste from TOM</h3>
-                <button type="button" class="modal-close" onclick="closeTomModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p style="margin-top: 0; color: #aaa; font-size: 13px;">
-                    Paste standings or pairings copied from TOM. Round number, tournament name, and player roster will be extracted automatically.
-                </p>
-                <textarea id="tom-paste-input" placeholder="Paste TOM text here..." rows="12" style="width: 100%; box-sizing: border-box; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #444; border-radius: 4px; background: #2a2a2a; color: #fff; resize: vertical;"></textarea>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closeTomModal()">Cancel</button>
-                <button type="button" class="btn-success" onclick="processTomImport()">Import Roster</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="print-container"></div>
-
-    <script>
-        let tableCounter = 0;
-        let importedPlayers = [];
-
-        function escapeHtml(str) {
-            if (str === null || str === undefined) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        function showBanner(message, isError = false) {
-            const banner = document.getElementById('import-banner');
-            const text = document.getElementById('import-banner-text');
-            if (banner && text) {
-                text.textContent = message;
-                banner.className = isError ? 'alert-box alert-error' : 'alert-box';
-                banner.style.display = 'flex';
-            }
-        }
-
-        function dismissBanner() {
-            const banner = document.getElementById('import-banner');
-            if (banner) banner.style.display = 'none';
-        }
-
-        // Extracts name and bracketed nationality, e.g. "Andrea Ceolin [IT]"
-        function parsePlayerName(fullName) {
-            let name = (fullName || "").trim();
-            let nat = "";
-            const match = name.match(/(.*?)\s*(\[[^\]]+\])$/);
-            if (match) {
-                name = match[1].trim();
-                nat = match[2].trim();
-            }
-            return { name, nat };
-        }
-
-        // Luhn-like check digit for match barcodes
-        function computeCheckDigit(body) {
-            if (!body || !/^\d+$/.test(body)) {
-                throw new Error("Invalid barcode body: digits only.");
-            }
-
-            let sum = 0;
-            let doubleNext = (body.length % 2 === 0);
-
-            for (let i = body.length - 1; i >= 0; i--) {
-                let digit = parseInt(body[i], 10);
-                if (doubleNext) digit *= 2;
-                sum += digit;
-                doubleNext = !doubleNext;
-            }
-
-            return (10 - (sum % 10)) % 10;
-        }
-
-        function calculateBarcode(type, podId, roundNum, tableNum) {
-            let outcome = '0';
-            if (type === 'p1') outcome = '1';
-            else if (type === 'p2') outcome = '2';
-            else if (type === 'tie') outcome = '3';
-
-            const body = `${podId}${roundNum}${tableNum}${outcome}`;
-            return body + computeCheckDigit(body);
-        }
-
-        function buildPlayerOptions(currentName = "") {
-            let html = `<option value="">-- Select Player --</option>`;
-            let found = false;
-
-            if (importedPlayers.length > 0) {
-                importedPlayers.forEach((p, idx) => {
-                    const isSelected = (currentName && p.name.trim().toLowerCase() === currentName.trim().toLowerCase());
-                    if (isSelected) found = true;
-                    html += `<option value="${idx}" ${isSelected ? 'selected' : ''}>${escapeHtml(p.name)} (${escapeHtml(p.record)})</option>`;
-                });
-            }
-
-            const isOtherSelected = (!found && currentName) || (importedPlayers.length === 0);
-            html += `<option value="__other__" ${isOtherSelected ? 'selected' : ''}>✏️ Other (write custom name)...</option>`;
-            return html;
-        }
-
-        function handlePlayerSelectChange(selectElem, playerNum) {
-            const matchEntry = selectElem.closest('.match-entry');
-            if (!matchEntry) return;
-
-            const nameInput = matchEntry.querySelector(`.p${playerNum}-name`);
-            const customContainer = matchEntry.querySelector(`.p${playerNum}-custom-container`);
-            const statsInput = matchEntry.querySelector(`.p${playerNum}-stats`);
-            const idInput = matchEntry.querySelector(`.p${playerNum}-id`);
-            const val = selectElem.value;
-
-            if (val === '__other__') {
-                if (customContainer) customContainer.style.display = 'block';
-                if (nameInput) nameInput.focus();
-            } else if (val !== '') {
-                const player = importedPlayers[parseInt(val, 10)];
-                if (player) {
-                    if (customContainer) customContainer.style.display = 'none';
-                    if (nameInput) nameInput.value = player.name;
-                    if (statsInput) statsInput.value = player.record;
-                    if (idInput && player.id) idInput.value = player.id;
-                }
-            } else {
-                if (customContainer) customContainer.style.display = 'none';
-                if (nameInput) nameInput.value = '';
-            }
-        }
-
-        function updateAllPlayerDropdowns() {
-            document.querySelectorAll('.match-entry').forEach(entry => {
-                const p1Select = entry.querySelector('.p1-select');
-                const p1NameInput = entry.querySelector('.p1-name');
-                const p1Container = entry.querySelector('.p1-custom-container');
-                const p2Select = entry.querySelector('.p2-select');
-                const p2NameInput = entry.querySelector('.p2-name');
-                const p2Container = entry.querySelector('.p2-custom-container');
-
-                if (p1Select && p1NameInput) {
-                    p1Select.innerHTML = buildPlayerOptions(p1NameInput.value);
-                    if (p1Container) {
-                        p1Container.style.display = (p1Select.value === '__other__' || importedPlayers.length === 0) ? 'block' : 'none';
-                    }
-                }
-                if (p2Select && p2NameInput) {
-                    p2Select.innerHTML = buildPlayerOptions(p2NameInput.value);
-                    if (p2Container) {
-                        p2Container.style.display = (p2Select.value === '__other__' || importedPlayers.length === 0) ? 'block' : 'none';
-                    }
-                }
-            });
-        }
-
-        function clearAllTables() {
-            const container = document.getElementById('matches-container');
-            if (container) container.innerHTML = '';
-            tableCounter = 0;
-            addTable();
-            showBanner("Tables reset.");
-        }
-
-        function clearSlips() {
-            const container = document.getElementById('print-container');
-            if (container) container.innerHTML = '';
-            showBanner("Generated match slips cleared.");
-        }
-
-        function addTable(data = null) {
-            tableCounter++;
-            const container = document.getElementById('matches-container');
-            const div = document.createElement('div');
-            div.className = 'match-entry';
-            div.id = `table-form-${tableCounter}`;
-            
-            const tableNum = data?.table ?? tableCounter;
-            const p1Name = data?.p1Name ?? (importedPlayers.length === 0 ? "Player 1 [IT]" : "");
-            const p1Id = data?.p1Id ?? "000000";
-            const p1Stats = data?.p1Stats ?? "0/0/0 (0)";
-
-            const p2Name = data?.p2Name ?? (importedPlayers.length === 0 ? "Player 2 [BE]" : "");
-            const p2Id = data?.p2Id ?? "000000";
-            const p2Stats = data?.p2Stats ?? "0/0/0 (0)";
-
-            const showP1Custom = (importedPlayers.length === 0 || p1Name !== "");
-            const showP2Custom = (importedPlayers.length === 0 || p2Name !== "");
-
-            div.innerHTML = `
-                <h4>Table #${escapeHtml(tableNum)} <button type="button" class="btn-danger" style="float:right; padding: 4px 10px;" onclick="removeTable(${tableCounter})">Remove</button></h4>
-                <div class="flex-row">
-                    <div class="form-group flex-col">
-                        <label>Table Num.</label>
-                        <input type="text" class="table-num" value="${escapeHtml(tableNum)}">
-                    </div>
-                </div>
-                <div class="flex-row" style="align-items: flex-start;">
-                    <div class="form-group flex-col">
-                        <label>Player 1 - Name</label>
-                        <select class="player-select p1-select" onchange="handlePlayerSelectChange(this, 1)" style="margin-bottom: 6px;">
-                            ${buildPlayerOptions(p1Name)}
-                        </select>
-                        <div class="p1-custom-container" style="${showP1Custom ? 'display: block;' : 'display: none;'}">
-                            <input type="text" class="p1-name" placeholder="Player 1 name [XX]" value="${escapeHtml(p1Name)}">
-                        </div>
-                    </div>
-                    <div class="form-group flex-col">
-                        <label>Player 1 - ID</label>
-                        <input type="text" class="p1-id" value="${escapeHtml(p1Id)}">
-                    </div>
-                    <div class="form-group flex-col">
-                        <label>Player 1 - Score</label>
-                        <input type="text" class="p1-stats" value="${escapeHtml(p1Stats)}">
-                    </div>
-                </div>
-                <div class="flex-row" style="align-items: flex-start;">
-                    <div class="form-group flex-col">
-                        <label>Player 2 - Name</label>
-                        <select class="player-select p2-select" onchange="handlePlayerSelectChange(this, 2)" style="margin-bottom: 6px;">
-                            ${buildPlayerOptions(p2Name)}
-                        </select>
-                        <div class="p2-custom-container" style="${showP2Custom ? 'display: block;' : 'display: none;'}">
-                            <input type="text" class="p2-name" placeholder="Player 2 name [XX]" value="${escapeHtml(p2Name)}">
-                        </div>
-                    </div>
-                    <div class="form-group flex-col">
-                        <label>Player 2 - ID</label>
-                        <input type="text" class="p2-id" value="${escapeHtml(p2Id)}">
-                    </div>
-                    <div class="form-group flex-col">
-                        <label>Player 2 - Score</label>
-                        <input type="text" class="p2-stats" value="${escapeHtml(p2Stats)}">
-                    </div>
-                </div>
-            `;
-            container.appendChild(div);
-
-            // Select matching player in dropdown if already present
-            const p1Select = div.querySelector('.p1-select');
-            const p2Select = div.querySelector('.p2-select');
-            if (p1Select && p1Name) {
-                const idx = importedPlayers.findIndex(p => p.name.trim().toLowerCase() === p1Name.trim().toLowerCase());
-                if (idx >= 0) {
-                    p1Select.value = String(idx);
-                    div.querySelector('.p1-custom-container').style.display = 'none';
-                }
-            }
-            if (p2Select && p2Name) {
-                const idx = importedPlayers.findIndex(p => p.name.trim().toLowerCase() === p2Name.trim().toLowerCase());
-                if (idx >= 0) {
-                    p2Select.value = String(idx);
-                    div.querySelector('.p2-custom-container').style.display = 'none';
-                }
-            }
-        }
-
-        function removeTable(id) {
-            const element = document.getElementById(`table-form-${id}`);
-            if (element) element.remove();
-        }
-
-        function openTomModal() {
-            const modal = document.getElementById('tom-modal');
-            const textarea = document.getElementById('tom-paste-input');
-            if (modal) {
-                modal.style.display = 'flex';
-                if (textarea) {
-                    textarea.value = '';
-                    setTimeout(() => textarea.focus(), 50);
-                }
-            }
-        }
-
-        function closeTomModal() {
-            const modal = document.getElementById('tom-modal');
-            if (modal) modal.style.display = 'none';
-        }
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeTomModal();
-        });
-        document.addEventListener('click', (e) => {
-            const modal = document.getElementById('tom-modal');
-            if (e.target === modal) closeTomModal();
-        });
-
-        function parseTomText(rawText) {
-            if (!rawText || !rawText.trim()) {
-                throw new Error("Pasted text is empty.");
-            }
-
-            const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-            let tournamentName = null;
-            let roundNum = null;
-            let category = null;
-
-            // Extract metadata
-            for (const line of lines) {
-                const tourneyMatch = line.match(/^Tournament:\s*(.+)$/i);
-                if (tourneyMatch) tournamentName = tourneyMatch[1].trim();
-
-                const roundMatch = line.match(/\bRound\s*(\d+)(?:\s*\/\s*\d+)?/i);
-                if (roundMatch && !roundNum) roundNum = parseInt(roundMatch[1], 10);
-
-                const catMatch = line.match(/^(?:Categoria|Category|Division|Pod)[:\s]+(.+)$/i);
-                if (catMatch && !category) category = catMatch[1].trim();
-
-                if (!tournamentName && line.includes('\t')) {
-                    const parts = line.split('\t').map(p => p.trim());
-                    if (parts.length >= 3 && /\d{1,2}\/\d{1,2}\/\d{4}/.test(parts[parts.length - 1])) {
-                        tournamentName = parts[0];
-                    }
-                }
-            }
-
-            // Extract player rows
-            const dataLines = lines.filter(line => {
-                if (/^(Standings|Pairings|Tournament:|Categoria|Category|Division|Standing\t|Table\t|Flight|Drop|Round|Match|Points|Opponents)/i.test(line)) {
-                    return false;
-                }
-                const parts = line.split('\t').map(p => p.trim());
-                if (parts.length >= 3 && /\d{1,2}\/\d{1,2}\/\d{4}/.test(parts[parts.length - 1])) {
-                    return false;
-                }
-                return /^\d+(\t|\s{2,})/.test(line);
-            });
-
-            if (dataLines.length === 0) {
-                throw new Error("Could not find player rows in the pasted text.");
-            }
-
-            const recordRegex = /\d+\/\d+\/\d+\s*\(\d+\)/;
-            const players = [];
-
-            for (const line of dataLines) {
-                const cols = line.split('\t').map(c => c.trim());
-                if (cols.length >= 2) {
-                    const rank = cols[0];
-                    const name = cols[1];
-                    let record = "0/0/0 (0)";
-                    let id = "000000";
-
-                    for (let i = 2; i < cols.length; i++) {
-                        if (recordRegex.test(cols[i])) {
-                            record = cols[i];
-                            break;
-                        }
-                    }
-                    if (name && name.toLowerCase() !== "bye") {
-                        players.push({ rank, name, record, id });
-                    }
-                }
-            }
-
-            return { tournamentName, roundNum, category, players };
-        }
-
-        function processTomImport() {
-            const textarea = document.getElementById('tom-paste-input');
-            const text = textarea?.value;
-
-            if (!text || !text.trim()) {
-                alert("Please paste text from TOM before importing.");
-                return;
-            }
-
-            try {
-                const parsed = parseTomText(text);
-
-                if (parsed.tournamentName) {
-                    document.getElementById('tournamentName').value = parsed.tournamentName;
-                }
-                if (parsed.roundNum) {
-                    document.getElementById('roundNum').value = parsed.roundNum;
-                }
-
-                if (parsed.players && parsed.players.length > 0) {
-                    importedPlayers = parsed.players;
-                    updateAllPlayerDropdowns();
-                    
-                    const details = [];
-                    if (parsed.roundNum) details.push(`Round ${parsed.roundNum}`);
-                    if (parsed.category) details.push(`${parsed.category}`);
-                    details.push(`${importedPlayers.length} players`);
-                    
-                    showBanner(`Loaded ${details.join(', ')} from TOM.`);
-                } else {
-                    showBanner("No players found in pasted text.", true);
-                }
-
-                closeTomModal();
-            } catch (err) {
-                alert("Error importing TOM data: " + err.message);
-            }
-        }
-
-        function generateSlips() {
-            const tournamentName = document.getElementById('tournamentName').value;
-            const podId = document.getElementById('podId').value;
-            const roundNum = document.getElementById('roundNum').value;
-            const container = document.getElementById('print-container');
-            container.innerHTML = ''; 
-
-            const matches = document.querySelectorAll('.match-entry');
-            let htmlOutput = '\n';
-
-            matches.forEach((match, index) => {
-                const tableNum = match.querySelector('.table-num').value;
-                
-                let p1RawName = match.querySelector('.p1-name')?.value || '';
-                if (!p1RawName) {
-                    const p1Sel = match.querySelector('.p1-select');
-                    if (p1Sel && p1Sel.value !== '' && p1Sel.value !== '__other__') {
-                        p1RawName = importedPlayers[parseInt(p1Sel.value, 10)]?.name || '';
-                    }
-                }
-                const p1Parsed = parsePlayerName(p1RawName);
-                const p1Id = match.querySelector('.p1-id').value;
-                const p1Stats = match.querySelector('.p1-stats').value;
-                
-                let p2RawName = match.querySelector('.p2-name')?.value || '';
-                if (!p2RawName) {
-                    const p2Sel = match.querySelector('.p2-select');
-                    if (p2Sel && p2Sel.value !== '' && p2Sel.value !== '__other__') {
-                        p2RawName = importedPlayers[parseInt(p2Sel.value, 10)]?.name || '';
-                    }
-                }
-                const p2Parsed = parsePlayerName(p2RawName);
-                const p2Id = match.querySelector('.p2-id').value;
-                const p2Stats = match.querySelector('.p2-stats').value;
-
-                const barcodeP1 = calculateBarcode('p1', podId, roundNum, tableNum);
-                const barcodeP2 = calculateBarcode('p2', podId, roundNum, tableNum);
-                const barcodeTie = calculateBarcode('tie', podId, roundNum, tableNum);
-
-                htmlOutput += `
-<table class="match_slip match_slip_format">
-    <tbody>
-    <tr class="noborders">
-        <td class="player-1-win">
-            <div class="barcode1 small rotate-left player-1-win-details">
-                <span style="float: right; text-align: right;">${p1Stats}<br><u>Initial below:</u></span>
-                <span class="truncate-name-small">${p1Parsed.name}</span><br>
-                ${p1Parsed.nat ? `<span>${p1Parsed.nat}</span><br>` : ''}
-                <span style="font-size: 18px">${p1Id}  - MA <span></span></span>
-            </div>
-        </td>
-        <td class="player-1-info">
-            <div class="player1 player-1-info-details">
-                <i style="font-size: 10px;">key: ${barcodeP1}</i>
-                <div class="player-1-barcode barcode-placeholder" data-barcode="${barcodeP1}">${barcodeP1}</div>
-                <div class="below-barcode-padding">
-                    <span style="font-size: 20px;" class="heading">Table #${tableNum}</span><br>
-                    <span class="truncate-name">${p1Parsed.name}</span>
-                    <span class="nat-line">${p1Parsed.nat}</span>
-                    <b style="font-size: 16px;">WINNER</b><br>
-                    <b style="font-size: 12px;">Player 1</b>
-                </div>
-            </div>
-        </td>
-        <td class="tied-info">
-            <div class="barcode3 small tied-info-details">
-                <i>key: ${barcodeTie}</i><br>
-                <div class="tie-barcode barcode-placeholder" data-barcode="${barcodeTie}">${barcodeTie}</div>
-                <div class="below-barcode-padding">
-                    <b>${tournamentName}<br>
-                        Round ${roundNum} </b>
-                    <div class="tie-instructions">
-                        <i>checkmark who wins each game,<br>
-                            circle <b>WINNER</b> or <b>TIE</b> for the match,<br>
-                            then both players initial their end</i>
-                    </div>
-                    <div>
-                        <span style="font-size: 14px;">_______ ▢ game 1 ▢ _______<br>_______ ▢ game 2 ▢ _______<br>_______ ▢ game 3 ▢ _______</span><br><br><span style="font-size: 16px;"><b>TIE</b></span>
-                    </div>
-                </div>
-            </div>
-        </td>
-        <td class="player-2-info">
-            <div class="player2 player-2-info-details">
-                <i style="font-size: 10px;">key: ${barcodeP2}</i>
-                <div class="player-2-barcode barcode-placeholder" data-barcode="${barcodeP2}">${barcodeP2}</div>
-                <div class="below-barcode-padding">
-                    <span style="font-size: 20px;" class="heading">Table #${tableNum}</span><br>
-                    <span class="truncate-name">${p2Parsed.name}</span>
-                    <span class="nat-line">${p2Parsed.nat}</span>
-                    <b style="font-size: 16px;">WINNER</b><br>
-                    <b style="font-size: 12px;">Player 2</b>
-                </div>
-            </div>
-        </td>
-        <td class="player-2-win">
-            <div class="barcode2 small player-2-win-details">
-                <span style="float: right; text-align: right;">${p2Stats}<br><u>Initial below:</u></span>
-                <span class="truncate-name-small">${p2Parsed.name}</span><br>
-                ${p2Parsed.nat ? `<span>${p2Parsed.nat}</span><br>` : ''}
-                <span style="font-size: 18px">${p2Id}  - MA<span></span></span>
-            </div>
-        </td>
-    </tr>
-    </tbody>
-</table>`;
-                
-                if (index < matches.length - 1) {
-                    htmlOutput += `<hr class="slip-separator">`;
-                }
-            });
-
-            htmlOutput += '\n';
-            container.innerHTML = htmlOutput;
-            initializeBarcodes();
-        }
-
-        function initializeBarcodes() {
-            if (typeof JsBarcode !== "function") {
-                console.warn("JsBarcode is not available.");
-                return;
-            }
-            document.querySelectorAll(".barcode-placeholder").forEach(element => {
-                const value = element.dataset.barcode;
-                if (value && value.trim() !== "") {
-                    element.innerHTML = `
-                        <svg class="barcode"
-                            jsbarcode-format="CODE128" jsbarcode-value="${value.trim()}"
-                            jsbarcode-width="2" jsbarcode-height="25"
-                            jsbarcode-padding="0" jsbarcode-margin="0"
-                            jsbarcode-displayvalue="false">
-                        </svg>
-                    `;
-                }
-            });
-            JsBarcode(".barcode").init();
-        }
-
-        window.onload = function() {
-            addTable();
-        };
-    </script>
 </body>
 </html>
