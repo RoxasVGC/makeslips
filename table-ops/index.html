@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Operations Grid | PKM Tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- PeerJS for P2P Realtime Sync -->
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <!-- QRCode.js for instant QR Room generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --bg: #0b0b14;
+            --surf: #131322;
+            --surf2: #1b1b2f;
+            --surf3: #24243e;
+            --bord: #2a2a46;
+            --bord-light: #3d3d66;
+            --txt: #f2f2fa;
+            --muted: #8e8eb2;
+            
+            /* Status Colors */
+            --st-default: #e0e0ea;      /* White / Light Gray */
+            --st-playing: #ef4444;      /* Red */
+            --st-judge: #f59e0b;        /* Yellow / Amber */
+            --st-empty: #10b981;        /* Light Green */
+            --st-ghost: #a855f7;        /* Purple */
+            --st-complete: #059669;     /* Deep Green */
+            
+            --acc2: #ffd166;
+            --r: 12px;
+            --fh: 'Bebas Neue', sans-serif;
+            --fb: 'Nunito', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--txt);
+            font-family: var(--fb);
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 15% 15%, rgba(168, 85, 247, 0.06) 0%, transparent 60%),
+                        radial-gradient(ellipse at 85% 85%, rgba(245, 158, 11, 0.05) 0%, transparent 60%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .back-link {
+            color: var(--acc2);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+
+        /* Room Connection Badge */
+        .peer-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surf2);
+            padding: 8px 14px;
+            border-radius: 99px;
+            border: 1px solid var(--bord);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #64748b;
+        }
+
+        .status-dot.online {
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+
+        .status-dot.connecting {
+            background: #f59e0b;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.3; }
+        }
+
+        /* Main Header */
+        header.hdr {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        header.hdr h1 {
+            font-family: var(--fh);
+            font-size: clamp(2.2rem, 5vw, 3.2rem);
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #fff 0%, var(--acc2) 60%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+
+        header.hdr p {
+            color: var(--muted);
+            font-size: 0.95rem;
+            margin-top: 4px;
+        }
+
+        /* Quick Controls & Setup Panel */
+        .panel {
+            background: var(--surf);
+            border: 1px solid var(--bord);
+            border-radius: var(--r);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+        }
+
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 12px;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .setup-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--surf2);
+            border: 1px solid var(--bord);
+            border-radius: 8px;
+            color: #fff;
+            font-family: var(--fb);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--acc2);
+        }
+
+        button {
+            padding: 10px 18px;
+            background: var(--surf3);
+            border: 1px solid var(--bord-light);
+            color: #fff;
+            border-radius: 8px;
+            font-family: var(--fb);
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background: var(--bord-light);
+            transform: translateY(-1px);
+        }
+
+        button.btn-primary {
+            background: #8b5cf6;
+            border-color: #a855f7;
+        }
+
+        button.btn-primary:hover {
+            background: #7c3aed;
+        }
+
+        button.btn-accent {
+            background: #f59e0b;
+            color: #000;
+            border-color: #fbbf24;
+        }
+
+        button.btn-accent:hover {
+            background: #d97706;
+        }
+
+        /* Stats & Filter Bar */
+        .filter-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .stat-pill {
+            background: var(--surf2);
+            border: 1px solid var(--bord);
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .stat-pill:hover, .stat-pill.active {
+            border-color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .stat-pill.active {
+            background: var(--surf3);
+            box-shadow: 0 0 12px rgba(255,255,255,0.1);
+        }
+
+        .stat-num {
+            font-family: var(--fh);
+            font-size: 1.8rem;
+            line-height: 1;
+            margin-top: 2px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--muted);
+        }
+
+        /* Filter Controls */
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .division-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .div-btn {
+            padding: 6px 14px;
+            border-radius: 99px;
+            background: var(--surf2);
+            border: 1px solid var(--bord);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .div-btn.active {
+            background: #6366f1;
+            border-color: #818cf8;
+            color: #fff;
+        }
+
+        .search-box {
+            max-width: 260px;
+            width: 100%;
+        }
+
+        /* Table Grid */
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 14px;
+        }
+
+        /* Individual Table Card */
+        .table-card {
+            background: var(--surf);
+            border: 2px solid var(--bord);
+            border-radius: var(--r);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 130px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.18s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .table-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        /* Status Styling */
+        /* 1. Default (White/Slate) */
+        .table-card.st-default {
+            border-color: var(--bord-light);
+            background: var(--surf);
+        }
+        .table-card.st-default .t-num { color: var(--st-default); }
+
+        /* 2. Playing (Red) */
+        .table-card.st-playing {
+            border-color: var(--st-playing);
+            background: rgba(239, 68, 68, 0.12);
+        }
+        .table-card.st-playing .t-num { color: #fca5a5; }
+
+        /* 3. Judge Seated (Yellow) */
+        .table-card.st-judge {
+            border-color: var(--st-judge);
+            background: rgba(245, 158, 11, 0.14);
+        }
+        .table-card.st-judge .t-num { color: #fde68a; }
+
+        /* 4. Empty Manual (Light Green) */
+        .table-card.st-empty {
+            border-color: var(--st-empty);
+            background: rgba(16, 185, 129, 0.12);
+        }
+        .table-card.st-empty .t-num { color: #a7f3d0; }
+
+        /* 5. Ghost Table (Purple Pulse Alert!) */
+        .table-card.st-ghost {
+            border-color: var(--st-ghost);
+            background: rgba(168, 85, 247, 0.22);
+            animation: pulseGhost 1.8s infinite;
+        }
+        .table-card.st-ghost .t-num { color: #f5d0fe; }
+
+        @keyframes pulseGhost {
+            0%, 100% { box-shadow: 0 0 16px rgba(168, 85, 247, 0.5); }
+            50% { box-shadow: 0 0 32px rgba(168, 85, 247, 0.8); }
+        }
+
+        /* 6. Complete (Dark Green) */
+        .table-card.st-complete {
+            border-color: #047857;
+            background: rgba(5, 150, 105, 0.08);
+            opacity: 0.65;
+        }
+        .table-card.st-complete .t-num { color: #6ee7b7; }
+
+        /* Card Elements */
+        .card-hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .t-num {
+            font-family: var(--fh);
+            font-size: 1.7rem;
+            line-height: 1;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge {
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 99px;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-default { background: var(--surf2); color: var(--muted); border: 1px solid var(--bord); }
+        .badge-playing { background: var(--st-playing); color: #fff; }
+        .badge-judge { background: var(--st-judge); color: #000; }
+        .badge-empty { background: var(--st-empty); color: #000; }
+        .badge-ghost { background: var(--st-ghost); color: #fff; animation: blink 1s infinite; }
+        .badge-complete { background: #065f46; color: #a7f3d0; }
+
+        .players-names {
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .player-row {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .vs-sep {
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .card-ftr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 700;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .active-timer {
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* Modal QR Code */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(6px);
+            z-index: 999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-card {
+            background: var(--surf);
+            border: 1px solid var(--bord-light);
+            border-radius: 16px;
+            padding: 28px;
+            max-width: 440px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+
+        .modal-card h2 {
+            font-family: var(--fh);
+            font-size: 2rem;
+            color: var(--acc2);
+            margin-bottom: 8px;
+        }
+
+        .modal-card p {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 18px;
+        }
+
+        .qr-wrap {
+            background: #fff;
+            padding: 16px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 18px;
+        }
+
+        .room-code-box {
+            background: var(--surf2);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--acc2);
+            letter-spacing: 1px;
+            margin-bottom: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Empty State */
+        .empty-grid {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+            grid-column: 1 / -1;
+        }
+
+        .empty-grid h3 {
+            font-family: var(--fh);
+            font-size: 2rem;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="top-bar">
+            <a href="../" class="back-link">← Back to PKM Tools</a>
+            
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="peer-status" id="peer-status-box">
+                    <span class="status-dot" id="peer-status-dot"></span>
+                    <span id="peer-status-text">P2P: Initializing...</span>
+                </div>
+                <button type="button" class="btn-accent" onclick="openQrModal()">📱 Share QR to Judges</button>
+            </div>
+        </div>
+
+        <header class="hdr">
+            <div>
+                <h1>TABLE OPERATIONS GRID</h1>
+                <p>Live floor judge & staff operations monitor with auto Ghost-Table detection</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" onclick="refreshPairings(true)">⚡ Sync RK9 Results</button>
+            </div>
+        </header>
+
+        <!-- Setup & Load Tournament Panel -->
+        <div class="panel">
+            <div class="setup-grid">
+                <input type="text" id="rk9-url-input" placeholder="Paste RK9 pairings URL (e.g. https://rk9.gg/pairings/TU02wKzv4cT2BBiI9dEg)...">
+                <button type="button" class="btn-primary" onclick="loadTournamentFromUrl()">📥 Load Tournament</button>
+                <select id="auto-refresh-rate" onchange="updatePollingRate()" style="width: auto;">
+                    <option value="30">Sync: 30s</option>
+                    <option value="45" selected>Sync: 45s</option>
+                    <option value="60">Sync: 60s</option>
+                    <option value="0">Sync: Off</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Filter & Stats Bar -->
+        <div class="filter-bar">
+            <div class="stats-summary">
+                <div class="stat-pill active" onclick="setFilter('all')">
+                    <span class="stat-label">Total Tables</span>
+                    <span class="stat-num" id="stat-total">0</span>
+                </div>
+                <div class="stat-pill" onclick="setFilter('playing')">
+                    <span class="stat-label" style="color: #fca5a5;">🔴 Playing</span>
+                    <span class="stat-num" id="stat-playing" style="color: #fca5a5;">0</span>
+                </div>
+                <div class="stat-pill" onclick="setFilter('judge')">
+                    <span class="stat-label" style="color: #fde68a;">🟡 Judge Call</span>
+                    <span class="stat-num" id="stat-judge" style="color: #fde68a;">0</span>
+                </div>
+                <div class="stat-pill" onclick="setFilter('ghost')">
+                    <span class="stat-label" style="color: #f5d0fe;">🟣 Ghost Table</span>
+                    <span class="stat-num" id="stat-ghost" style="color: #f5d0fe;">0</span>
+                </div>
+                <div class="stat-pill" onclick="setFilter('empty')">
+                    <span class="stat-label" style="color: #a7f3d0;">🟢 Empty (Manual)</span>
+                    <span class="stat-num" id="stat-empty" style="color: #a7f3d0;">0</span>
+                </div>
+                <div class="stat-pill" onclick="setFilter('complete')">
+                    <span class="stat-label" style="color: #6ee7b7;">✔ Completed</span>
+                    <span class="stat-num" id="stat-complete" style="color: #6ee7b7;">0</span>
+                </div>
+            </div>
+
+            <div class="controls-row">
+                <div class="division-pills" id="division-pills-container">
+                    <!-- Dynamic Division Chips -->
+                </div>
+                <div class="search-box">
+                    <input type="text" id="table-search" placeholder="Search table # or player..." oninput="renderTables()">
+                </div>
+            </div>
+        </div>
+
+        <!-- Tables Grid -->
+        <div class="tables-grid" id="tables-grid-container">
+            <div class="empty-grid">
+                <h3>No Tournament Loaded</h3>
+                <p>Paste an RK9 pairings URL above and click "Load Tournament" to initialize the live table grid.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Connection Modal -->
+    <div class="modal-overlay" id="qr-modal" onclick="if(event.target === this) closeQrModal()">
+        <div class="modal-card">
+            <h2>Scan with Phone</h2>
+            <p>Floor judges can scan this QR code to join your live session and update tables in real time!</p>
+            
+            <div class="qr-wrap" id="qrcode-target"></div>
+
+            <div class="room-code-box">
+                <span id="room-code-text">ROOM: LOADING...</span>
+                <button type="button" class="btn-small" onclick="copyRoomLink()">📋 Copy Link</button>
+            </div>
+
+            <button type="button" onclick="closeQrModal()" style="width: 100%;">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // ---------------------------------------------------------
+        // APP STATE
+        // ---------------------------------------------------------
+        let tournament = {
+            url: '',
+            id: '',
+            title: '',
+            dateStr: '',
+            activeDivisionId: '',
+            divisions: {} // divId -> { name, round, tables: [ { num, p1, p2, isRk9Done } ] }
+        };
+
+        // Table manual overrides: key: `${divId}_${tableNum}` -> { status: 'default'|'playing'|'judge'|'empty', timestamp: number }
+        let tableStates = {};
+        
+        let activeFilter = 'all'; // 'all', 'playing', 'judge', 'ghost', 'empty', 'complete'
+        let pollingTimer = null;
+        let ghostCheckTimer = null;
+        let isHost = true;
+        let myPeer = null;
+        let myRoomId = '';
+        let connectedPeers = [];
+
+        // Obfuscated Cloudflare Worker endpoint
+        const _k = 'aHR0cHM6Ly9wa210b29scy5tb3N0YWxsaW5vZW5yaWNvLndvcmtlcnMuZGV2Lz91cmw9';
+        const getEndpoint = () => atob(_k);
+
+        // ---------------------------------------------------------
+        // PEERJS P2P REALTIME ENGINE
+        // ---------------------------------------------------------
+        function initP2P() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetRoom = urlParams.get('room');
+
+            if (targetRoom) {
+                // Client / Floor Judge Mode
+                isHost = false;
+                myRoomId = 'PKM-JUDGE-' + Math.random().toString(36).substring(2, 7);
+                document.getElementById('peer-status-text').textContent = 'P2P: Connecting to Host...';
+                document.getElementById('peer-status-dot').className = 'status-dot connecting';
+
+                myPeer = new Peer(myRoomId);
+                myPeer.on('open', () => {
+                    const conn = myPeer.connect(targetRoom, { reliable: true });
+                    setupClientConnection(conn);
+                });
+
+                myPeer.on('error', (err) => {
+                    console.error("PeerJS Error:", err);
+                    document.getElementById('peer-status-text').textContent = 'P2P: Connection Error';
+                    document.getElementById('peer-status-dot').className = 'status-dot';
+                });
+            } else {
+                // Host / Master Regia Mode
+                isHost = true;
+                myRoomId = 'PKM-HOST-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                
+                myPeer = new Peer(myRoomId);
+                myPeer.on('open', (id) => {
+                    document.getElementById('peer-status-text').textContent = `Host Ready (${connectedPeers.length} judges)`;
+                    document.getElementById('peer-status-dot').className = 'status-dot online';
+                    document.getElementById('room-code-text').textContent = id;
+                    generateQrCode(getShareUrl());
+                });
+
+                myPeer.on('connection', (conn) => {
+                    connectedPeers.push(conn);
+                    document.getElementById('peer-status-text').textContent = `Host Ready (${connectedPeers.length} judges)`;
+
+                    conn.on('open', () => {
+                        // Send current board state to new judge
+                        conn.send({
+                            type: 'SYNC_BOARD',
+                            tournament,
+                            tableStates
+                        });
+                    });
+
+                    conn.on('data', (data) => {
+                        handleIncomingAction(data);
+                    });
+
+                    conn.on('close', () => {
+                        connectedPeers = connectedPeers.filter(p => p !== conn);
+                        document.getElementById('peer-status-text').textContent = `Host Ready (${connectedPeers.length} judges)`;
+                    });
+                });
+            }
+        }
+
+        function setupClientConnection(conn) {
+            conn.on('open', () => {
+                document.getElementById('peer-status-text').textContent = 'P2P: Connected to Host';
+                document.getElementById('peer-status-dot').className = 'status-dot online';
+            });
+
+            conn.on('data', (data) => {
+                if (data.type === 'SYNC_BOARD') {
+                    tournament = data.tournament;
+                    tableStates = data.tableStates;
+                    if (tournament.url) document.getElementById('rk9-url-input').value = tournament.url;
+                    renderDivisions();
+                    renderTables();
+                } else if (data.type === 'UPDATE_TABLE_STATE') {
+                    tableStates[data.key] = data.state;
+                    renderTables();
+                }
+            });
+
+            conn.on('close', () => {
+                document.getElementById('peer-status-text').textContent = 'P2P: Disconnected';
+                document.getElementById('peer-status-dot').className = 'status-dot';
+            });
+
+            window.hostConnection = conn;
+        }
+
+        function broadcastAction(action) {
+            if (isHost) {
+                connectedPeers.forEach(conn => {
+                    if (conn.open) conn.send(action);
+                });
+            } else if (window.hostConnection && window.hostConnection.open) {
+                window.hostConnection.send(action);
+            }
+        }
+
+        function handleIncomingAction(data) {
+            if (data.type === 'SET_TABLE_STATUS') {
+                tableStates[data.key] = data.state;
+                saveLocalState();
+                renderTables();
+                // Broadcast to other judges
+                broadcastAction({
+                    type: 'UPDATE_TABLE_STATE',
+                    key: data.key,
+                    state: data.state
+                });
+            }
+        }
+
+        // ---------------------------------------------------------
+        // TABLE STATE MACHINE & CYCLING
+        // ---------------------------------------------------------
+        function cycleTableState(divId, tableNum) {
+            const key = `${divId}_${tableNum}`;
+            const current = tableStates[key] || { status: 'default', timestamp: Date.now() };
+
+            let nextStatus = 'playing';
+            if (current.status === 'default') nextStatus = 'playing';
+            else if (current.status === 'playing') nextStatus = 'judge';
+            else if (current.status === 'judge') nextStatus = 'empty';
+            else if (current.status === 'empty') nextStatus = 'default';
+
+            const newState = {
+                status: nextStatus,
+                timestamp: Date.now()
+            };
+
+            tableStates[key] = newState;
+            saveLocalState();
+            renderTables();
+
+            broadcastAction({
+                type: isHost ? 'UPDATE_TABLE_STATE' : 'SET_TABLE_STATUS',
+                key: key,
+                state: newState
+            });
+        }
+
+        // ---------------------------------------------------------
+        // FETCHING & PARSING RK9 PAIRINGS
+        // ---------------------------------------------------------
+        async function loadTournamentFromUrl() {
+            const urlInput = document.getElementById('rk9-url-input');
+            const targetUrl = (urlInput.value || '').trim();
+
+            if (!targetUrl) {
+                alert("Please paste an RK9 pairings URL.");
+                return;
+            }
+
+            tournament.url = targetUrl;
+            tournament.id = targetUrl.match(/\/pairings\/([a-zA-Z0-9_-]+)/)?.[1] || 'tourney';
+
+            await refreshPairings();
+        }
+
+        async function refreshPairings(userFeedback = false) {
+            if (!tournament.url) return;
+
+            try {
+                const ep = getEndpoint();
+                const resp = await fetch(`${ep}${encodeURIComponent(tournament.url)}`);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const html = await resp.text();
+
+                parsePairingsData(html);
+                saveLocalState();
+                renderDivisions();
+                renderTables();
+
+                if (isHost) {
+                    broadcastAction({
+                        type: 'SYNC_BOARD',
+                        tournament,
+                        tableStates
+                    });
+                }
+
+                if (userFeedback) {
+                    alert("Tournament pairings refreshed from RK9!");
+                }
+            } catch (err) {
+                console.error("Fetch pairings error:", err);
+                if (userFeedback) alert("Error syncing from RK9: " + err.message);
+            }
+        }
+
+        function parsePairingsData(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const h4Title = doc.querySelector('h4.mb-0') || doc.querySelector('h4');
+            if (h4Title) tournament.title = h4Title.textContent.trim();
+
+            const dateH5 = doc.querySelector('h5.my-0');
+            tournament.dateStr = dateH5 ? dateH5.textContent.split('\n')[0].trim() : '';
+
+            const pillLinks = doc.querySelectorAll('ul.nav-pills li.nav-item a.nav-link');
+            
+            pillLinks.forEach(link => {
+                const targetId = (link.getAttribute('href') || '').replace('#', '');
+                const rawName = link.textContent.trim();
+                
+                let divName = rawName;
+                let roundNum = 1;
+                const match = rawName.match(/^(.*?)\s+in\s+Round\s+(\d+)/i);
+                if (match) {
+                    divName = match[1].trim();
+                    roundNum = parseInt(match[2], 10);
+                }
+
+                const divPane = doc.getElementById(targetId);
+                const tableList = [];
+
+                if (divPane) {
+                    const activeRoundTab = divPane.querySelector('.current-tables.active, .current-tables.show') || 
+                                           divPane.querySelector('.current-tables');
+                    
+                    if (activeRoundTab) {
+                        const matchRows = activeRoundTab.querySelectorAll('.row.match.no-gutter');
+                        matchRows.forEach((row, rIdx) => {
+                            if (rIdx === 0) return; // skip header
+
+                            const isComplete = row.classList.contains('complete');
+                            const cols = row.querySelectorAll('div[class*="col"]');
+                            let tNum = rIdx;
+                            let p1 = "Player 1";
+                            let p2 = "Player 2";
+
+                            if (cols.length >= 3) {
+                                tNum = parseInt(cols[0].textContent.trim(), 10) || rIdx;
+                                p1 = cols[1].textContent.trim();
+                                p2 = cols[2].textContent.trim();
+                            }
+
+                            tableList.push({
+                                num: tNum,
+                                p1,
+                                p2,
+                                isRk9Done: isComplete
+                            });
+                        });
+                    }
+                }
+
+                tournament.divisions[targetId] = {
+                    name: divName,
+                    round: roundNum,
+                    rawLabel: rawName,
+                    tables: tableList
+                };
+
+                if (!tournament.activeDivisionId) {
+                    tournament.activeDivisionId = targetId;
+                }
+            });
+        }
+
+        // ---------------------------------------------------------
+        // GHOST TABLE TICK ENGINE (1s Interval)
+        // ---------------------------------------------------------
+        function startGhostTimer() {
+            if (ghostCheckTimer) clearInterval(ghostCheckTimer);
+            ghostCheckTimer = setInterval(() => {
+                updateTimerDisplays();
+            }, 1000);
+        }
+
+        function updateTimerDisplays() {
+            const now = Date.now();
+            let ghostCount = 0;
+
+            const div = tournament.divisions[tournament.activeDivisionId];
+            if (!div) return;
+
+            div.tables.forEach(t => {
+                const key = `${tournament.activeDivisionId}_${t.num}`;
+                const st = tableStates[key];
+                
+                if (st && st.status === 'empty' && !t.isRk9Done) {
+                    const elapsedSec = Math.floor((now - st.timestamp) / 1000);
+                    if (elapsedSec >= 120) {
+                        ghostCount++;
+                    }
+                }
+
+                // Update timer text inside card if visible
+                const timerEl = document.getElementById(`timer-${key}`);
+                if (timerEl && st && st.timestamp) {
+                    const elapsed = Math.floor((now - st.timestamp) / 1000);
+                    const mins = Math.floor(elapsed / 60);
+                    const secs = elapsed % 60;
+                    const timeStr = `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
+
+                    if (st.status === 'judge') {
+                        timerEl.textContent = `⏱️ ${timeStr}`;
+                    } else if (st.status === 'empty') {
+                        if (elapsed >= 120 && !t.isRk9Done) {
+                            timerEl.textContent = `⚠️ GHOST (${timeStr})`;
+                            timerEl.parentElement.parentElement.className = 'table-card st-ghost';
+                        } else {
+                            timerEl.textContent = `⏱️ ${timeStr}`;
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('stat-ghost').textContent = ghostCount;
+        }
+
+        // ---------------------------------------------------------
+        // UI RENDERING
+        // ---------------------------------------------------------
+        function renderDivisions() {
+            const container = document.getElementById('division-pills-container');
+            if (!container) return;
+
+            const divKeys = Object.keys(tournament.divisions);
+            if (divKeys.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = divKeys.map(dId => {
+                const d = tournament.divisions[dId];
+                const isActive = dId === tournament.activeDivisionId;
+                return `
+                    <div class="div-btn ${isActive ? 'active' : ''}" onclick="selectDivision('${dId}')">
+                        ${escapeHtml(d.name)} &bull; R${d.round} (${d.tables.length} tables)
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectDivision(divId) {
+            tournament.activeDivisionId = divId;
+            renderDivisions();
+            renderTables();
+        }
+
+        function renderTables() {
+            const container = document.getElementById('tables-grid-container');
+            if (!container) return;
+
+            const div = tournament.divisions[tournament.activeDivisionId];
+            if (!div || !div.tables || div.tables.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-grid">
+                        <h3>No Tables Found</h3>
+                        <p>Load an active tournament URL with live pairings to start monitoring tables.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const searchQuery = (document.getElementById('table-search')?.value || '').toLowerCase().trim();
+            const now = Date.now();
+
+            let totalCount = div.tables.length;
+            let playingCount = 0;
+            let judgeCount = 0;
+            let emptyCount = 0;
+            let ghostCount = 0;
+            let completeCount = 0;
+
+            let html = '';
+
+            div.tables.forEach(table => {
+                const key = `${tournament.activeDivisionId}_${table.num}`;
+                const customState = tableStates[key] || { status: 'default', timestamp: 0 };
+                
+                // Determine effective state
+                let effectiveState = customState.status;
+                let isGhost = false;
+
+                if (table.isRk9Done) {
+                    effectiveState = 'complete';
+                    completeCount++;
+                } else if (customState.status === 'playing') {
+                    playingCount++;
+                } else if (customState.status === 'judge') {
+                    judgeCount++;
+                } else if (customState.status === 'empty') {
+                    emptyCount++;
+                    const elapsed = Math.floor((now - customState.timestamp) / 1000);
+                    if (elapsed >= 120) {
+                        effectiveState = 'ghost';
+                        isGhost = true;
+                        ghostCount++;
+                    }
+                }
+
+                // Filter check
+                if (activeFilter === 'playing' && effectiveState !== 'playing') return;
+                if (activeFilter === 'judge' && effectiveState !== 'judge') return;
+                if (activeFilter === 'ghost' && !isGhost) return;
+                if (activeFilter === 'empty' && effectiveState !== 'empty' && !isGhost) return;
+                if (activeFilter === 'complete' && !table.isRk9Done) return;
+
+                // Search check
+                if (searchQuery) {
+                    const matchNum = String(table.num).includes(searchQuery);
+                    const matchP1 = table.p1.toLowerCase().includes(searchQuery);
+                    const matchP2 = table.p2.toLowerCase().includes(searchQuery);
+                    if (!matchNum && !matchP1 && !matchP2) return;
+                }
+
+                // Badge and labels
+                let badgeClass = 'badge-default';
+                let badgeText = 'IN CORSO';
+
+                if (effectiveState === 'complete') {
+                    badgeClass = 'badge-complete';
+                    badgeText = 'COMPLETATO';
+                } else if (effectiveState === 'playing') {
+                    badgeClass = 'badge-playing';
+                    badgeText = 'GIOCANTE';
+                } else if (effectiveState === 'judge') {
+                    badgeClass = 'badge-judge';
+                    badgeText = 'ARBITRO';
+                } else if (effectiveState === 'empty') {
+                    badgeClass = 'badge-empty';
+                    badgeText = 'VUOTO';
+                } else if (effectiveState === 'ghost') {
+                    badgeClass = 'badge-ghost';
+                    badgeText = '⚠️ GHOST';
+                }
+
+                // Timer calculation
+                let timerDisplay = '';
+                if ((effectiveState === 'judge' || effectiveState === 'empty' || isGhost) && customState.timestamp) {
+                    const elapsed = Math.floor((now - customState.timestamp) / 1000);
+                    const mins = Math.floor(elapsed / 60);
+                    const secs = elapsed % 60;
+                    timerDisplay = `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
+                }
+
+                html += `
+                    <div class="table-card st-${effectiveState}" onclick="cycleTableState('${tournament.activeDivisionId}', ${table.num})">
+                        <div class="card-hdr">
+                            <span class="t-num">Table ${table.num}</span>
+                            <span class="status-badge ${badgeClass}">${badgeText}</span>
+                        </div>
+                        <div class="players-names">
+                            <div class="player-row">${escapeHtml(table.p1)}</div>
+                            <div class="vs-sep">vs</div>
+                            <div class="player-row">${escapeHtml(table.p2)}</div>
+                        </div>
+                        <div class="card-ftr">
+                            <span>Tap to cycle</span>
+                            <span class="active-timer" id="timer-${key}">${timerDisplay}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html || `
+                <div class="empty-grid">
+                    <h3>No Tables Match Filter</h3>
+                    <p>Change your filter or search query above to view active tables.</p>
+                </div>
+            `;
+
+            // Update stats
+            document.getElementById('stat-total').textContent = totalCount;
+            document.getElementById('stat-playing').textContent = playingCount;
+            document.getElementById('stat-judge').textContent = judgeCount;
+            document.getElementById('stat-empty').textContent = emptyCount;
+            document.getElementById('stat-ghost').textContent = ghostCount;
+            document.getElementById('stat-complete').textContent = completeCount;
+        }
+
+        function setFilter(filterType) {
+            activeFilter = filterType;
+            document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active'));
+            const map = {
+                all: 0, playing: 1, judge: 2, ghost: 3, empty: 4, complete: 5
+            };
+            const pills = document.querySelectorAll('.stat-pill');
+            if (pills[map[filterType]]) pills[map[filterType]].classList.add('active');
+            renderTables();
+        }
+
+        function updatePollingRate() {
+            if (pollingTimer) clearInterval(pollingTimer);
+            const rateSec = parseInt(document.getElementById('auto-refresh-rate').value, 10);
+            if (rateSec > 0) {
+                pollingTimer = setInterval(() => {
+                    refreshPairings(false);
+                }, rateSec * 1000);
+            }
+        }
+
+        // ---------------------------------------------------------
+        // MODAL & QR CODE
+        // ---------------------------------------------------------
+        function getShareUrl() {
+            const loc = window.location;
+            return `${loc.protocol}//${loc.host}${loc.pathname}?room=${myRoomId}`;
+        }
+
+        function generateQrCode(url) {
+            const target = document.getElementById('qrcode-target');
+            if (!target) return;
+            target.innerHTML = '';
+            new QRCode(target, {
+                text: url,
+                width: 220,
+                height: 220,
+                colorDark: "#0c0c16",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        function openQrModal() {
+            const modal = document.getElementById('qr-modal');
+            if (modal) modal.style.display = 'flex';
+            if (myRoomId) generateQrCode(getShareUrl());
+        }
+
+        function closeQrModal() {
+            const modal = document.getElementById('qr-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function copyRoomLink() {
+            navigator.clipboard.writeText(getShareUrl()).then(() => {
+                alert("Room link copied to clipboard!");
+            });
+        }
+
+        // ---------------------------------------------------------
+        // LOCAL STORAGE
+        // ---------------------------------------------------------
+        function saveLocalState() {
+            try {
+                localStorage.setItem('pkm_table_ops_tourney', JSON.stringify(tournament));
+                localStorage.setItem('pkm_table_ops_states', JSON.stringify(tableStates));
+            } catch(e) {}
+        }
+
+        function loadLocalState() {
+            try {
+                const savedTourney = localStorage.getItem('pkm_table_ops_tourney');
+                if (savedTourney) tournament = JSON.parse(savedTourney);
+
+                const savedStates = localStorage.getItem('pkm_table_ops_states');
+                if (savedStates) tableStates = JSON.parse(savedStates);
+
+                if (tournament.url) {
+                    document.getElementById('rk9-url-input').value = tournament.url;
+                }
+            } catch(e) {}
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // ---------------------------------------------------------
+        // INITIALIZATION
+        // ---------------------------------------------------------
+        window.addEventListener('DOMContentLoaded', () => {
+            loadLocalState();
+            initP2P();
+            startGhostTimer();
+            updatePollingRate();
+            renderDivisions();
+            renderTables();
+        });
+    </script>
+</body>
+</html>

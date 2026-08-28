@@ -10,6 +10,7 @@ Hosted on **GitHub Pages**.
 
 - [**Match Slips Generator**](makeslips/): Create and print tournament match slips with Code 128 barcodes, check-digit calculations, and direct roster import from TOM (Tournament Operation Manager).
 - [**RK9 Round Monitor**](rk9-monitor/): Live round progress tracker for official RK9 pairings with multi-division support (Masters, Seniors, Juniors) and native browser push notifications when rounds near completion.
+- [**Table Operations Grid**](table-ops/): Real-time collaborative table management and floor operations grid for judges and staff. Features instant P2P smartphone sync via QR code, active ruling timers, and automatic **Ghost Table** detection ($T \ge 2\text{ min}$ empty without result).
 - **VGC Teamlist Generator** *(Coming Soon)*: Generate graphic and printable team sheets from Poképaste URLs.
 - **VGC EVs Converter** *(Coming Soon)*: EV conversions and damage calculation paste formatting.
 
@@ -17,13 +18,13 @@ Hosted on **GitHub Pages**.
 
 ## ⚖️ RK9 Terms of Service Compliance & Architectural Design
 
-The **RK9 Round Monitor** has been designed from the ground up to operate in full accordance with the spirit and text of **RK9 Labs' Terms of Service** (specifically *Section 3: Your Use of the Services* and *Section 5.3: Prohibited Uses*).
+The **RK9 Round Monitor** and **Table Operations Grid** have been designed from the ground up to operate in full accordance with the spirit and text of **RK9 Labs' Terms of Service** (specifically *Section 3: Your Use of the Services* and *Section 5.3: Prohibited Uses*).
 
 ### 1. No Data Harvesting or Personal Data Storage (Section 5.3, Clauses 1 & 8)
 * **What the ToS Prohibits**: Collecting, harvesting, or storing personal data about users or misappropriating event data for commercial gain.
 * **Our Architecture**:
-  * The tool does **not** collect, store, index, or database player names, IDs, decks, or match histories.
-  * Calculations (such as `tables completed / total tables`) are computed **in-memory** in the user's browser session and immediately discarded on page refresh. Zero data is persisted or shared.
+  * The tool does **not** collect, store, index, or database player personal info or tournament archives.
+  * Calculations (such as table status tracking and completed tables) are computed **in-memory** in the user's browser session and immediately discarded on page refresh. Zero data is persisted or shared externally.
 
 ### 2. Conservative, Human-Equivalent Polling (Section 5.3, Clause 5)
 * **What the ToS Prohibits**: Taking any action that imposes an unreasonable load on RK9 computer or network equipment.
@@ -51,6 +52,8 @@ pkmtools/
 ├── makeslips/              # Tool: Match Slips Generator
 │   └── index.html
 ├── rk9-monitor/            # Tool: RK9 Round Monitor
+│   └── index.html
+├── table-ops/              # Tool: Table Operations Grid
 │   └── index.html
 └── .github/
     └── workflows/
