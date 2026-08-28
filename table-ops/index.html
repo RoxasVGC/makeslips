@@ -162,12 +162,12 @@
 
         .setup-grid {
             display: grid;
-            grid-template-columns: 1fr auto auto;
+            grid-template-columns: 1fr auto auto auto;
             gap: 12px;
             align-items: center;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
             .setup-grid {
                 grid-template-columns: 1fr;
             }
@@ -230,6 +230,17 @@
 
         button.btn-accent:hover {
             background: #d97706;
+        }
+
+        button.btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+            color: #fca5a5;
+        }
+
+        button.btn-danger:hover {
+            background: #ef4444;
+            color: #fff;
         }
 
         /* Stats & Filter Bar */
@@ -339,6 +350,8 @@
             min-height: 130px;
             cursor: pointer;
             user-select: none;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
             transition: all 0.18s ease;
             position: relative;
             overflow: hidden;
@@ -349,36 +362,92 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.4);
         }
 
+        .table-card:active {
+            transform: scale(0.97);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px 8px;
+            }
+
+            header.hdr h1 {
+                font-size: 2.2rem;
+            }
+
+            .tables-grid {
+                grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+                gap: 8px;
+            }
+
+            .table-card {
+                padding: 10px 10px;
+                min-height: 118px;
+                border-radius: 10px;
+            }
+
+            .t-num {
+                font-size: 1.4rem;
+            }
+
+            .players-names {
+                font-size: 11px;
+                gap: 1px;
+                margin-bottom: 6px;
+            }
+
+            .status-badge {
+                font-size: 9px;
+                padding: 2px 6px;
+            }
+
+            .card-ftr {
+                font-size: 10px;
+            }
+
+            .stat-pill {
+                padding: 6px 10px;
+            }
+
+            .stat-num {
+                font-size: 1.4rem;
+            }
+
+            .controls-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                max-width: 100%;
+            }
+        }
+
         /* Status Styling */
-        /* 1. Default (White/Slate) */
         .table-card.st-default {
             border-color: var(--bord-light);
             background: var(--surf);
         }
         .table-card.st-default .t-num { color: var(--st-default); }
 
-        /* 2. Playing (Red) */
         .table-card.st-playing {
             border-color: var(--st-playing);
             background: rgba(239, 68, 68, 0.12);
         }
         .table-card.st-playing .t-num { color: #fca5a5; }
 
-        /* 3. Judge Seated (Yellow) */
         .table-card.st-judge {
             border-color: var(--st-judge);
             background: rgba(245, 158, 11, 0.14);
         }
         .table-card.st-judge .t-num { color: #fde68a; }
 
-        /* 4. Empty Manual (Light Green) */
         .table-card.st-empty {
             border-color: var(--st-empty);
             background: rgba(16, 185, 129, 0.12);
         }
         .table-card.st-empty .t-num { color: #a7f3d0; }
 
-        /* 5. Ghost Table (Purple Pulse Alert!) */
         .table-card.st-ghost {
             border-color: var(--st-ghost);
             background: rgba(168, 85, 247, 0.22);
@@ -391,7 +460,6 @@
             50% { box-shadow: 0 0 32px rgba(168, 85, 247, 0.8); }
         }
 
-        /* 6. Complete (Dark Green) */
         .table-card.st-complete {
             border-color: #047857;
             background: rgba(5, 150, 105, 0.08);
@@ -399,7 +467,6 @@
         }
         .table-card.st-complete .t-num { color: #6ee7b7; }
 
-        /* Card Elements */
         .card-hdr {
             display: flex;
             justify-content: space-between;
@@ -470,7 +537,7 @@
             font-weight: bold;
         }
 
-        /* Modal QR Code */
+        /* Modal QR Code & Room Setup */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -488,7 +555,7 @@
             border: 1px solid var(--bord-light);
             border-radius: 16px;
             padding: 28px;
-            max-width: 440px;
+            max-width: 460px;
             width: 100%;
             text-align: center;
             box-shadow: 0 10px 40px rgba(0,0,0,0.6);
@@ -517,20 +584,27 @@
 
         .room-code-box {
             background: var(--surf2);
-            padding: 10px 14px;
+            padding: 12px 14px;
             border-radius: 8px;
-            font-family: monospace;
-            font-size: 15px;
-            font-weight: bold;
-            color: var(--acc2);
-            letter-spacing: 1px;
-            margin-bottom: 18px;
+            margin-bottom: 16px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
         }
 
-        /* Empty State */
+        .room-code-box label {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        .room-input-group {
+            display: flex;
+            gap: 8px;
+        }
+
         .empty-grid {
             text-align: center;
             padding: 60px 20px;
@@ -551,12 +625,13 @@
         <div class="top-bar">
             <a href="../" class="back-link">← Back to PKM Tools</a>
             
-            <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <div class="peer-status" id="peer-status-box">
                     <span class="status-dot" id="peer-status-dot"></span>
                     <span id="peer-status-text">P2P: Initializing...</span>
                 </div>
-                <button type="button" class="btn-accent" onclick="openQrModal()">📱 Share QR to Judges</button>
+                <button type="button" id="haptic-toggle-btn" class="btn-small" onclick="toggleHaptics()">📳 Vibration: OFF</button>
+                <button type="button" class="btn-accent" onclick="openQrModal()">📱 Session PIN & QR Code</button>
             </div>
         </div>
 
@@ -565,8 +640,9 @@
                 <h1>TABLE OPERATIONS GRID</h1>
                 <p>Live floor judge & staff operations monitor with auto Ghost-Table detection</p>
             </div>
-            <div style="display: flex; gap: 8px;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button type="button" onclick="refreshPairings(true)">⚡ Sync RK9 Results</button>
+                <button type="button" class="btn-danger" onclick="confirmResetRound()">🔄 Reset Round Overrides</button>
             </div>
         </header>
 
@@ -576,11 +652,12 @@
                 <input type="text" id="rk9-url-input" placeholder="Paste RK9 pairings URL (e.g. https://rk9.gg/pairings/TU02wKzv4cT2BBiI9dEg)...">
                 <button type="button" class="btn-primary" onclick="loadTournamentFromUrl()">📥 Load Tournament</button>
                 <select id="auto-refresh-rate" onchange="updatePollingRate()" style="width: auto;">
-                    <option value="30">Sync: 30s</option>
-                    <option value="45" selected>Sync: 45s</option>
-                    <option value="60">Sync: 60s</option>
-                    <option value="0">Sync: Off</option>
+                    <option value="30">Auto-Sync: 30s</option>
+                    <option value="45" selected>Auto-Sync: 45s</option>
+                    <option value="60">Auto-Sync: 60s</option>
+                    <option value="0">Auto-Sync: Off</option>
                 </select>
+                <button type="button" onclick="openJoinModal()">🔑 Join as Judge</button>
             </div>
         </div>
 
@@ -632,20 +709,43 @@
         </div>
     </div>
 
-    <!-- QR Code Connection Modal -->
+    <!-- QR Code & Custom Password Modal -->
     <div class="modal-overlay" id="qr-modal" onclick="if(event.target === this) closeQrModal()">
         <div class="modal-card">
-            <h2>Scan with Phone</h2>
-            <p>Floor judges can scan this QR code to join your live session and update tables in real time!</p>
+            <h2>Session PIN & QR Code</h2>
+            <p>Judges can scan the QR code to connect instantly, or manually enter your Session PIN below.</p>
             
             <div class="qr-wrap" id="qrcode-target"></div>
 
             <div class="room-code-box">
-                <span id="room-code-text">ROOM: LOADING...</span>
-                <button type="button" class="btn-small" onclick="copyRoomLink()">📋 Copy Link</button>
+                <label>Custom Session PIN / Room Password</label>
+                <div class="room-input-group">
+                    <input type="text" id="custom-room-input" placeholder="e.g. TORINO2026" style="font-weight: bold; text-transform: uppercase;">
+                    <button type="button" class="btn-primary btn-small" onclick="applyCustomRoomPin()">Set PIN</button>
+                </div>
             </div>
 
-            <button type="button" onclick="closeQrModal()" style="width: 100%;">Close</button>
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <button type="button" class="btn-secondary" style="flex: 1;" onclick="copyRoomLink()">📋 Copy Join Link</button>
+                <button type="button" style="flex: 1;" onclick="closeQrModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Join as Judge Modal -->
+    <div class="modal-overlay" id="join-modal" onclick="if(event.target === this) closeJoinModal()">
+        <div class="modal-card">
+            <h2>Join Staff Session</h2>
+            <p>Enter the Session PIN / Room Code set by the tournament organizer.</p>
+
+            <div style="margin-bottom: 16px;">
+                <input type="text" id="join-pin-input" placeholder="Enter Session PIN (e.g. TORINO2026)..." style="font-size: 16px; font-weight: bold; text-transform: uppercase; text-align: center;">
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-primary" style="flex: 1;" onclick="connectWithPin()">Connect</button>
+                <button type="button" class="btn-secondary" style="flex: 1;" onclick="closeJoinModal()">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -662,7 +762,7 @@
             divisions: {} // divId -> { name, round, tables: [ { num, p1, p2, isRk9Done } ] }
         };
 
-        // Table manual overrides: key: `${divId}_${tableNum}` -> { status: 'default'|'playing'|'judge'|'empty', timestamp: number }
+        // Table manual overrides: key: `${divId}_${round}_${tableNum}` -> { status: 'default'|'playing'|'judge'|'empty', timestamp: number }
         let tableStates = {};
         
         let activeFilter = 'all'; // 'all', 'playing', 'judge', 'ghost', 'empty', 'complete'
@@ -688,61 +788,94 @@
                 // Client / Floor Judge Mode
                 isHost = false;
                 myRoomId = 'PKM-JUDGE-' + Math.random().toString(36).substring(2, 7);
-                document.getElementById('peer-status-text').textContent = 'P2P: Connecting to Host...';
+                document.getElementById('peer-status-text').textContent = `Connecting to ${targetRoom}...`;
                 document.getElementById('peer-status-dot').className = 'status-dot connecting';
 
                 myPeer = new Peer(myRoomId);
                 myPeer.on('open', () => {
-                    const conn = myPeer.connect(targetRoom, { reliable: true });
-                    setupClientConnection(conn);
+                    const cleanTarget = normalizeRoomId(targetRoom);
+                    const conn = myPeer.connect(cleanTarget, { reliable: true });
+                    setupClientConnection(conn, targetRoom);
                 });
 
                 myPeer.on('error', (err) => {
                     console.error("PeerJS Error:", err);
-                    document.getElementById('peer-status-text').textContent = 'P2P: Connection Error';
+                    document.getElementById('peer-status-text').textContent = 'P2P: Error connecting to PIN';
                     document.getElementById('peer-status-dot').className = 'status-dot';
                 });
             } else {
-                // Host / Master Regia Mode
-                isHost = true;
-                myRoomId = 'PKM-HOST-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-                
-                myPeer = new Peer(myRoomId);
-                myPeer.on('open', (id) => {
-                    document.getElementById('peer-status-text').textContent = `Host Ready (${connectedPeers.length} judges)`;
-                    document.getElementById('peer-status-dot').className = 'status-dot online';
-                    document.getElementById('room-code-text').textContent = id;
-                    generateQrCode(getShareUrl());
-                });
-
-                myPeer.on('connection', (conn) => {
-                    connectedPeers.push(conn);
-                    document.getElementById('peer-status-text').textContent = `Host Ready (${connectedPeers.length} judges)`;
-
-                    conn.on('open', () => {
-                        // Send current board state to new judge
-                        conn.send({
-                            type: 'SYNC_BOARD',
-                            tournament,
-                            tableStates
-                        });
-                    });
-
-                    conn.on('data', (data) => {
-                        handleIncomingAction(data);
-                    });
-
-                    conn.on('close', () => {
-                        connectedPeers = connectedPeers.filter(p => p !== conn);
-                        document.getElementById('peer-status-text').textContent = `Host Ready (${connectedPeers.length} judges)`;
-                    });
-                });
+                // Host Mode
+                const savedPin = localStorage.getItem('pkm_table_ops_pin') || ('PKM-' + Math.random().toString(36).substring(2, 7).toUpperCase());
+                startHost(savedPin);
             }
         }
 
-        function setupClientConnection(conn) {
+        function normalizeRoomId(pin) {
+            const cleaned = (pin || '').trim().replace(/[^a-zA-Z0-9_-]/g, '').toUpperCase();
+            return cleaned.startsWith('PKM-') ? cleaned : `PKM-${cleaned}`;
+        }
+
+        function startHost(pin) {
+            isHost = true;
+            myRoomId = normalizeRoomId(pin);
+            document.getElementById('custom-room-input').value = myRoomId.replace('PKM-', '');
+
+            if (myPeer) myPeer.destroy();
+
+            myPeer = new Peer(myRoomId);
+            myPeer.on('open', (id) => {
+                document.getElementById('peer-status-text').textContent = `Host: ${myRoomId} (${connectedPeers.length} staff)`;
+                document.getElementById('peer-status-dot').className = 'status-dot online';
+                generateQrCode(getShareUrl());
+            });
+
+            myPeer.on('connection', (conn) => {
+                connectedPeers.push(conn);
+                document.getElementById('peer-status-text').textContent = `Host: ${myRoomId} (${connectedPeers.length} staff)`;
+
+                conn.on('open', () => {
+                    // Send full current board state to connecting judge
+                    conn.send({
+                        type: 'SYNC_BOARD',
+                        tournament,
+                        tableStates
+                    });
+                });
+
+                conn.on('data', (data) => {
+                    handleIncomingAction(data);
+                });
+
+                conn.on('close', () => {
+                    connectedPeers = connectedPeers.filter(p => p !== conn);
+                    document.getElementById('peer-status-text').textContent = `Host: ${myRoomId} (${connectedPeers.length} staff)`;
+                });
+            });
+
+            myPeer.on('error', (err) => {
+                console.error("Host PeerJS Error:", err);
+                if (err.type === 'unavailable-id') {
+                    // PIN already taken on peerjs broker, add random suffix
+                    const altPin = pin + '-' + Math.floor(Math.random()*90 + 10);
+                    startHost(altPin);
+                }
+            });
+        }
+
+        function applyCustomRoomPin() {
+            const inputVal = (document.getElementById('custom-room-input').value || '').trim();
+            if (!inputVal) {
+                alert("Please enter a valid Session PIN / Password.");
+                return;
+            }
+            localStorage.setItem('pkm_table_ops_pin', inputVal);
+            startHost(inputVal);
+            alert(`Session PIN updated to: ${normalizeRoomId(inputVal)}`);
+        }
+
+        function setupClientConnection(conn, roomName) {
             conn.on('open', () => {
-                document.getElementById('peer-status-text').textContent = 'P2P: Connected to Host';
+                document.getElementById('peer-status-text').textContent = `Staff Mode: ${roomName}`;
                 document.getElementById('peer-status-dot').className = 'status-dot online';
             });
 
@@ -760,7 +893,7 @@
             });
 
             conn.on('close', () => {
-                document.getElementById('peer-status-text').textContent = 'P2P: Disconnected';
+                document.getElementById('peer-status-text').textContent = 'P2P: Disconnected from Host';
                 document.getElementById('peer-status-dot').className = 'status-dot';
             });
 
@@ -782,7 +915,7 @@
                 tableStates[data.key] = data.state;
                 saveLocalState();
                 renderTables();
-                // Broadcast to other judges
+                // Re-broadcast to other connected judges
                 broadcastAction({
                     type: 'UPDATE_TABLE_STATE',
                     key: data.key,
@@ -795,7 +928,9 @@
         // TABLE STATE MACHINE & CYCLING
         // ---------------------------------------------------------
         function cycleTableState(divId, tableNum) {
-            const key = `${divId}_${tableNum}`;
+            const div = tournament.divisions[divId];
+            const roundNum = div ? div.round : 1;
+            const key = `${divId}_R${roundNum}_${tableNum}`;
             const current = tableStates[key] || { status: 'default', timestamp: Date.now() };
 
             let nextStatus = 'playing';
@@ -809,6 +944,11 @@
                 timestamp: Date.now()
             };
 
+            // Optional haptic vibration (OFF by default)
+            if (hapticEnabled && window.navigator && window.navigator.vibrate) {
+                try { window.navigator.vibrate(25); } catch(e) {}
+            }
+
             tableStates[key] = newState;
             saveLocalState();
             renderTables();
@@ -818,6 +958,49 @@
                 key: key,
                 state: newState
             });
+        }
+
+        // ---------------------------------------------------------
+        // HAPTIC VIBRATION PREFERENCE
+        // ---------------------------------------------------------
+        let hapticEnabled = false;
+
+        function toggleHaptics() {
+            hapticEnabled = !hapticEnabled;
+            localStorage.setItem('pkm_haptic_enabled', hapticEnabled ? '1' : '0');
+            updateHapticButton();
+            if (hapticEnabled && window.navigator && window.navigator.vibrate) {
+                try { window.navigator.vibrate(30); } catch(e) {}
+            }
+        }
+
+        function updateHapticButton() {
+            const btn = document.getElementById('haptic-toggle-btn');
+            if (btn) {
+                btn.textContent = hapticEnabled ? '📳 Vibration: ON' : '📳 Vibration: OFF';
+                btn.className = hapticEnabled ? 'btn-small btn-accent' : 'btn-small';
+            }
+        }
+
+        function confirmResetRound() {
+            if (confirm("Reset manual overrides (Playing, Judge calls, Empty) for the active round?")) {
+                const div = tournament.divisions[tournament.activeDivisionId];
+                if (div) {
+                    const prefix = `${tournament.activeDivisionId}_R${div.round}_`;
+                    Object.keys(tableStates).forEach(k => {
+                        if (k.startsWith(prefix)) delete tableStates[k];
+                    });
+                    saveLocalState();
+                    renderTables();
+                    if (isHost) {
+                        broadcastAction({
+                            type: 'SYNC_BOARD',
+                            tournament,
+                            tableStates
+                        });
+                    }
+                }
+            }
         }
 
         // ---------------------------------------------------------
@@ -847,7 +1030,11 @@
                 if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                 const html = await resp.text();
 
-                parsePairingsData(html);
+                const roundChanged = parsePairingsData(html);
+                if (roundChanged) {
+                    console.log("New round detected from RK9, refreshing table state!");
+                }
+
                 saveLocalState();
                 renderDivisions();
                 renderTables();
@@ -879,6 +1066,7 @@
             const dateH5 = doc.querySelector('h5.my-0');
             tournament.dateStr = dateH5 ? dateH5.textContent.split('\n')[0].trim() : '';
 
+            let hasNewRound = false;
             const pillLinks = doc.querySelectorAll('ul.nav-pills li.nav-item a.nav-link');
             
             pillLinks.forEach(link => {
@@ -891,6 +1079,11 @@
                 if (match) {
                     divName = match[1].trim();
                     roundNum = parseInt(match[2], 10);
+                }
+
+                const prevRound = tournament.divisions[targetId]?.round;
+                if (prevRound && prevRound !== roundNum) {
+                    hasNewRound = true;
                 }
 
                 const divPane = doc.getElementById(targetId);
@@ -938,6 +1131,8 @@
                     tournament.activeDivisionId = targetId;
                 }
             });
+
+            return hasNewRound;
         }
 
         // ---------------------------------------------------------
@@ -958,7 +1153,7 @@
             if (!div) return;
 
             div.tables.forEach(t => {
-                const key = `${tournament.activeDivisionId}_${t.num}`;
+                const key = `${tournament.activeDivisionId}_R${div.round}_${t.num}`;
                 const st = tableStates[key];
                 
                 if (st && st.status === 'empty' && !t.isRk9Done) {
@@ -968,7 +1163,7 @@
                     }
                 }
 
-                // Update timer text inside card if visible
+                // Update timer text inside card if element exists
                 const timerEl = document.getElementById(`timer-${key}`);
                 if (timerEl && st && st.timestamp) {
                     const elapsed = Math.floor((now - st.timestamp) / 1000);
@@ -1050,7 +1245,7 @@
             let html = '';
 
             div.tables.forEach(table => {
-                const key = `${tournament.activeDivisionId}_${table.num}`;
+                const key = `${tournament.activeDivisionId}_R${div.round}_${table.num}`;
                 const customState = tableStates[key] || { status: 'default', timestamp: 0 };
                 
                 // Determine effective state
@@ -1176,11 +1371,12 @@
         }
 
         // ---------------------------------------------------------
-        // MODAL & QR CODE
+        // MODALS & QR CODE
         // ---------------------------------------------------------
         function getShareUrl() {
             const loc = window.location;
-            return `${loc.protocol}//${loc.host}${loc.pathname}?room=${myRoomId}`;
+            const pinName = myRoomId.replace('PKM-', '');
+            return `${loc.protocol}//${loc.host}${loc.pathname}?room=${pinName}`;
         }
 
         function generateQrCode(url) {
@@ -1208,9 +1404,29 @@
             if (modal) modal.style.display = 'none';
         }
 
+        function openJoinModal() {
+            const modal = document.getElementById('join-modal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeJoinModal() {
+            const modal = document.getElementById('join-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function connectWithPin() {
+            const pin = (document.getElementById('join-pin-input').value || '').trim();
+            if (!pin) {
+                alert("Please enter a Session PIN.");
+                return;
+            }
+            const loc = window.location;
+            window.location.href = `${loc.protocol}//${loc.host}${loc.pathname}?room=${encodeURIComponent(pin)}`;
+        }
+
         function copyRoomLink() {
             navigator.clipboard.writeText(getShareUrl()).then(() => {
-                alert("Room link copied to clipboard!");
+                alert("Direct join link copied to clipboard!");
             });
         }
 
@@ -1235,6 +1451,9 @@
                 if (tournament.url) {
                     document.getElementById('rk9-url-input').value = tournament.url;
                 }
+
+                hapticEnabled = localStorage.getItem('pkm_haptic_enabled') === '1';
+                updateHapticButton();
             } catch(e) {}
         }
 
