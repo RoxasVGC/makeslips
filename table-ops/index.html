@@ -641,23 +641,20 @@
                 <p>Live floor judge & staff operations monitor with auto Ghost-Table detection</p>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button type="button" onclick="refreshPairings(true)">⚡ Sync RK9 Results</button>
+                <button type="button" onclick="openPasteModal()">📥 Manual Sync (Paste HTML)</button>
                 <button type="button" class="btn-danger" onclick="confirmResetRound()">🔄 Reset Round Overrides</button>
             </div>
         </header>
 
         <!-- Setup & Load Tournament Panel -->
         <div class="panel">
-            <div class="setup-grid">
-                <input type="text" id="rk9-url-input" placeholder="Paste RK9 pairings URL (e.g. https://rk9.gg/pairings/TU02wKzv4cT2BBiI9dEg)...">
-                <button type="button" class="btn-primary" onclick="loadTournamentFromUrl()">📥 Load Tournament</button>
-                <select id="auto-refresh-rate" onchange="updatePollingRate()" style="width: auto;">
-                    <option value="30">Auto-Sync: 30s</option>
-                    <option value="45" selected>Auto-Sync: 45s</option>
-                    <option value="60">Auto-Sync: 60s</option>
-                    <option value="0">Auto-Sync: Off</option>
-                </select>
+            <div class="setup-grid" style="grid-template-columns: auto auto auto 1fr;">
+                <a href="#" id="bookmarklet-btn" class="btn-primary" style="text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; font-size: 13px;" onclick="event.preventDefault(); alert('Drag this button to your bookmarks bar!');">🔖 Sync to Table Ops</a>
+                <button type="button" class="btn-primary" onclick="openPasteModal()">📋 Paste RK9 HTML</button>
                 <button type="button" onclick="openJoinModal()">🔑 Join as Judge</button>
+            </div>
+            <div style="margin-top: 12px; font-size: 13px; color: var(--muted); line-height: 1.4;">
+                <strong>How to load data:</strong> Drag the 🔖 button to your bookmarks bar. Go to the RK9 pairings page and click the bookmark to send data here. Or, copy the RK9 page text/HTML and use the Paste button.
             </div>
         </div>
 
@@ -749,6 +746,19 @@
         </div>
     </div>
 
+    <!-- Paste HTML Modal -->
+    <div class="modal-overlay" id="paste-modal" onclick="if(event.target === this) closePasteModal()">
+        <div class="modal-card" style="max-width: 600px;">
+            <h2>Paste RK9 Pairings HTML</h2>
+            <p>Go to the RK9 Pairings page, press <strong>Ctrl+A</strong> then <strong>Ctrl+C</strong>, and paste here (Ctrl+V).</p>
+            <textarea id="paste-html-input" style="width: 100%; height: 200px; background: var(--surf2); color: #fff; border: 1px solid var(--bord); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; margin-bottom: 16px; outline: none;"></textarea>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-primary" style="flex: 1;" onclick="processPastedHtml()">Load Pairings</button>
+                <button type="button" class="btn-secondary" style="flex: 1;" onclick="closePasteModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ---------------------------------------------------------
         // APP STATE
@@ -766,16 +776,11 @@
         let tableStates = {};
         
         let activeFilter = 'all'; // 'all', 'playing', 'judge', 'ghost', 'empty', 'complete'
-        let pollingTimer = null;
         let ghostCheckTimer = null;
         let isHost = true;
         let myPeer = null;
         let myRoomId = '';
         let connectedPeers = [];
-
-        // Obfuscated Cloudflare Worker endpoint
-        const _k = 'aHR0cHM6Ly9wa210b29scy5tb3N0YWxsaW5vZW5yaWNvLndvcmtlcnMuZGV2Lz91cmw9';
-        const getEndpoint = () => atob(_k);
 
         // ---------------------------------------------------------
         // PEERJS P2P REALTIME ENGINE
@@ -1004,55 +1009,75 @@
         }
 
         // ---------------------------------------------------------
-        // FETCHING & PARSING RK9 PAIRINGS
+        // BOOKMARKLET & PARSING RK9 PAIRINGS
         // ---------------------------------------------------------
-        async function loadTournamentFromUrl() {
-            const urlInput = document.getElementById('rk9-url-input');
-            const targetUrl = (urlInput.value || '').trim();
-
-            if (!targetUrl) {
-                alert("Please paste an RK9 pairings URL.");
-                return;
+        function setupBookmarklet() {
+            const btn = document.getElementById('bookmarklet-btn');
+            if (btn) {
+                const targetUrl = window.location.href.split('#')[0];
+                const code = `javascript:(function(){if(!window.location.href.includes('rk9.gg/pairings')){alert('Please run this on an RK9 pairings page.');return;}let t=document.querySelector('h4')?.textContent.trim()||'Tournament Pairings';let ds=document.querySelector('h5')?.textContent.split('\\n')[0].trim()||'';let divs={};document.querySelectorAll('ul.nav-pills li.nav-item a.nav-link').forEach(l=>{let tId=(l.getAttribute('href')||'').replace('#','');let rName=l.textContent.trim();let dName=rName;let rNum=1;let m=rName.match(/^(.*?)\\s+in\\s+Round\\s+(\\d+)/i);if(m){dName=m[1].trim();rNum=parseInt(m[2],10);}let dp=document.getElementById(tId);let tbls=[];if(dp){let ar=dp.querySelector('.current-tables.active, .current-tables.show')||dp.querySelector('.current-tables');if(ar){ar.querySelectorAll('.row.match.no-gutter').forEach((r,i)=>{if(i===0)return;let isC=r.classList.contains('complete');let c=r.querySelectorAll('div[class*="col"]');if(c.length>=3){tbls.push({num:parseInt(c[0].textContent.trim(),10)||i,p1:c[1].textContent.trim(),p2:c[2].textContent.trim(),isRk9Done:isC});}});}}divs[tId]={name:dName,round:rNum,rawLabel:rName,tables:tbls};});let p=encodeURIComponent(JSON.stringify({title:t,dateStr:ds,divisions:divs}));let w=window.open('${targetUrl}#data='+p,'TableOpsWindow');if(!w)alert('Popup blocked!');})();`;
+                btn.href = code;
             }
-
-            tournament.url = targetUrl;
-            tournament.id = targetUrl.match(/\/pairings\/([a-zA-Z0-9_-]+)/)?.[1] || 'tourney';
-
-            await refreshPairings();
         }
 
-        async function refreshPairings(userFeedback = false) {
-            if (!tournament.url) return;
+        function handleUrlHash() {
+            if (window.location.hash.startsWith('#data=')) {
+                try {
+                    const payloadStr = decodeURIComponent(window.location.hash.substring(6));
+                    const data = JSON.parse(payloadStr);
+                    
+                    tournament.title = data.title || 'Tournament Pairings';
+                    tournament.dateStr = data.dateStr || '';
+                    
+                    let hasNewRound = false;
+                    Object.keys(data.divisions).forEach(tId => {
+                        const newDiv = data.divisions[tId];
+                        const prevRound = tournament.divisions[tId]?.round;
+                        if (prevRound && prevRound !== newDiv.round) {
+                            hasNewRound = true;
+                        }
+                        tournament.divisions[tId] = newDiv;
+                        if (!tournament.activeDivisionId) tournament.activeDivisionId = tId;
+                    });
 
-            try {
-                const ep = getEndpoint();
-                const resp = await fetch(`${ep}${encodeURIComponent(tournament.url)}`);
-                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                const html = await resp.text();
+                    if (hasNewRound) console.log("New round detected!");
+                    
+                    saveLocalState();
+                    renderDivisions();
+                    renderTables();
 
-                const roundChanged = parsePairingsData(html);
-                if (roundChanged) {
-                    console.log("New round detected from RK9, refreshing table state!");
+                    if (isHost) {
+                        broadcastAction({ type: 'SYNC_BOARD', tournament, tableStates });
+                    }
+                    
+                    history.replaceState(null, null, window.location.pathname + window.location.search);
+                } catch(e) {
+                    console.error("Error parsing bookmarklet data:", e);
+                    alert("Error loading data from RK9.");
                 }
+            }
+        }
 
+        function openPasteModal() { document.getElementById('paste-modal').style.display = 'flex'; }
+        function closePasteModal() { document.getElementById('paste-modal').style.display = 'none'; document.getElementById('paste-html-input').value = ''; }
+        
+        function processPastedHtml() {
+            const html = document.getElementById('paste-html-input').value;
+            if (!html.trim()) { alert('Please paste the HTML first.'); return; }
+            
+            try {
+                const roundChanged = parsePairingsData(html);
+                if (roundChanged) console.log("New round detected!");
+                
                 saveLocalState();
                 renderDivisions();
                 renderTables();
 
-                if (isHost) {
-                    broadcastAction({
-                        type: 'SYNC_BOARD',
-                        tournament,
-                        tableStates
-                    });
-                }
-
-                if (userFeedback) {
-                    alert("Tournament pairings refreshed from RK9!");
-                }
-            } catch (err) {
-                console.error("Fetch pairings error:", err);
-                if (userFeedback) alert("Error syncing from RK9: " + err.message);
+                if (isHost) { broadcastAction({ type: 'SYNC_BOARD', tournament, tableStates }); }
+                closePasteModal();
+            } catch(e) {
+                console.error("Error parsing pasted HTML:", e);
+                alert("Error parsing HTML. Make sure you copied from the RK9 pairings page.");
             }
         }
 
@@ -1360,15 +1385,7 @@
             renderTables();
         }
 
-        function updatePollingRate() {
-            if (pollingTimer) clearInterval(pollingTimer);
-            const rateSec = parseInt(document.getElementById('auto-refresh-rate').value, 10);
-            if (rateSec > 0) {
-                pollingTimer = setInterval(() => {
-                    refreshPairings(false);
-                }, rateSec * 1000);
-            }
-        }
+
 
         // ---------------------------------------------------------
         // MODALS & QR CODE
@@ -1467,12 +1484,15 @@
         // ---------------------------------------------------------
         window.addEventListener('DOMContentLoaded', () => {
             loadLocalState();
+            setupBookmarklet();
             initP2P();
             startGhostTimer();
-            updatePollingRate();
             renderDivisions();
             renderTables();
+            handleUrlHash();
         });
+
+        window.addEventListener('hashchange', handleUrlHash);
     </script>
 </body>
 </html>
