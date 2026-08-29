@@ -797,7 +797,9 @@
                 document.getElementById('peer-status-text').textContent = `Connecting to ${targetRoom}...`;
                 document.getElementById('peer-status-dot').className = 'status-dot connecting';
 
-                myPeer = new Peer(myRoomId);
+                myPeer = new Peer(myRoomId, {
+                    config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' } ] }
+                });
                 myPeer.on('open', () => {
                     const cleanTarget = normalizeRoomId(targetRoom);
                     const conn = myPeer.connect(cleanTarget, { reliable: true });
@@ -832,7 +834,9 @@
 
             if (myPeer) myPeer.destroy();
 
-            myPeer = new Peer(myRoomId);
+            myPeer = new Peer(myRoomId, {
+                config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' } ] }
+            });
             myPeer.on('open', (id) => {
                 document.getElementById('peer-status-text').textContent = `Host: ${myRoomId} (${connectedPeers.length} staff)`;
                 document.getElementById('peer-status-dot').className = 'status-dot online';
@@ -841,24 +845,46 @@
 
             myPeer.on('connection', (conn) => {
                 connectedPeers.push(conn);
-                document.getElementById('peer-status-text').textContent = `Host: ${myRoomId} (${connectedPeers.length} staff)`;
+                
+                const updateStaffCount = () => {
+                    document.getElementById('peer-status-text').textContent = `Host: ${myRoomId} (${connectedPeers.length} staff)`;
+                };
+                updateStaffCount();
 
-                conn.on('open', () => {
-                    // Send full current board state to connecting judge
+                const sendSync = () => {
                     conn.send({
                         type: 'SYNC_BOARD',
                         tournament,
                         tableStates
                     });
-                });
+                };
 
-                conn.on('data', (data) => {
-                    handleIncomingAction(data);
-                });
+                if (conn.open) {
+                    sendSync();
+                } else {
+                    conn.on('open', sendSync);
+                }
 
                 conn.on('close', () => {
                     connectedPeers = connectedPeers.filter(p => p !== conn);
-                    document.getElementById('peer-status-text').textContent = `Host: ${myRoomId} (${connectedPeers.length} staff)`;
+                    updateStaffCount();
+                });
+                
+                conn.on('error', () => {
+                    connectedPeers = connectedPeers.filter(p => p !== conn);
+                    updateStaffCount();
+                });
+
+                conn.on('data', (data) => {
+                    if (data.type === 'UPDATE_TABLE_STATE') {
+                        tableStates[data.key] = data.state;
+                        saveLocalState();
+                        renderTables();
+                        // Relay to others
+                        connectedPeers.forEach(p => {
+                            if (p !== conn && p.open) p.send(data);
+                        });
+                    }
                 });
             });
 
@@ -884,10 +910,16 @@
         }
 
         function setupClientConnection(conn, roomName) {
-            conn.on('open', () => {
+            const onOpen = () => {
                 document.getElementById('peer-status-text').textContent = `Staff Mode: ${roomName}`;
                 document.getElementById('peer-status-dot').className = 'status-dot online';
-            });
+            };
+            
+            if (conn.open) {
+                onOpen();
+            } else {
+                conn.on('open', onOpen);
+            }
 
             conn.on('data', (data) => {
                 if (data.type === 'SYNC_BOARD') {
