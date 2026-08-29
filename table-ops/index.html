@@ -1013,7 +1013,8 @@
 
         function clearSession() {
             if (confirm("Are you sure you want to completely delete all data, end the P2P session, and kick all staff? This cannot be undone.")) {
-                localStorage.removeItem('pkm_table_ops_state');
+                localStorage.removeItem('pkm_table_ops_tourney');
+                localStorage.removeItem('pkm_table_ops_states');
                 localStorage.removeItem('pkm_table_ops_pin');
                 if (typeof myPeer !== 'undefined' && myPeer) {
                     try { myPeer.destroy(); } catch(e) {}
