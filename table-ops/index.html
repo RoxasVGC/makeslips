@@ -810,7 +810,11 @@
                 });
             } else {
                 // Host Mode
-                const savedPin = localStorage.getItem('pkm_table_ops_pin') || ('PKM-' + Math.random().toString(36).substring(2, 7).toUpperCase());
+                let savedPin = localStorage.getItem('pkm_table_ops_pin');
+                if (!savedPin) {
+                    savedPin = 'PKM-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+                    localStorage.setItem('pkm_table_ops_pin', savedPin);
+                }
                 startHost(savedPin);
             }
         }
@@ -1490,6 +1494,8 @@
             renderTables();
             handleUrlHash();
         });
+
+        window.addEventListener('hashchange', handleUrlHash);
 
         window.addEventListener('hashchange', handleUrlHash);
     </script>
