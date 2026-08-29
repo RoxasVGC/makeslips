@@ -643,6 +643,7 @@
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button type="button" onclick="openPasteModal()">📥 Manual Sync (Paste HTML)</button>
                 <button type="button" class="btn-danger" onclick="confirmResetRound()">🔄 Reset Round Overrides</button>
+                <button type="button" class="btn-danger" style="background-color: #991b1b; border-color: #7f1d1d;" onclick="clearSession()">🗑️ Clear Data & End Session</button>
             </div>
         </header>
 
@@ -1004,13 +1005,22 @@
                     saveLocalState();
                     renderTables();
                     if (isHost) {
-                        broadcastAction({
-                            type: 'SYNC_BOARD',
-                            tournament,
-                            tableStates
-                        });
+                        broadcastAction({ type: 'SYNC_BOARD', tournament, tableStates });
                     }
                 }
+            }
+        }
+
+        function clearSession() {
+            if (confirm("Are you sure you want to completely delete all data, end the P2P session, and kick all staff? This cannot be undone.")) {
+                localStorage.removeItem('pkm_table_ops_state');
+                localStorage.removeItem('pkm_table_ops_pin');
+                if (typeof myPeer !== 'undefined' && myPeer) {
+                    try { myPeer.destroy(); } catch(e) {}
+                }
+                window.location.hash = '';
+                window.location.search = ''; // clears ?room=
+                window.location.reload();
             }
         }
 
