@@ -888,7 +888,9 @@
                 if (data.type === 'SYNC_BOARD') {
                     tournament = data.tournament;
                     tableStates = data.tableStates;
-                    if (tournament.url) document.getElementById('rk9-url-input').value = tournament.url;
+                    if (tournament.url && document.getElementById('rk9-url-input')) {
+                        document.getElementById('rk9-url-input').value = tournament.url;
+                    }
                     renderDivisions();
                     renderTables();
                 } else if (data.type === 'UPDATE_TABLE_STATE') {
