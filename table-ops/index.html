@@ -1148,7 +1148,7 @@
             const btn = document.getElementById('bookmarklet-btn');
             if (btn) {
                 const targetUrl = window.location.href.split('#')[0];
-                const code = `javascript:(function(){if(!window.location.href.includes('rk9.gg/pairings')){alert('Please run this on an RK9 pairings page.');return;}let t=document.querySelector('h4')?.textContent.trim()||'Tournament Pairings';let ds=document.querySelector('h5')?.textContent.split('\\n')[0].trim()||'';let divs={};document.querySelectorAll('ul.nav-pills li.nav-item a.nav-link').forEach(l=>{let tId=(l.getAttribute('href')||'').replace('#','');let rName=l.textContent.trim();let dName=rName;let rNum=1;let m=rName.match(/^(.*?)\\s+in\\s+Round\\s+(\\d+)/i);if(m){dName=m[1].trim();rNum=parseInt(m[2],10);}let dp=document.getElementById(tId);let tbls=[];if(dp){let ar=dp.querySelector('.current-tables.active, .current-tables.show')||dp.querySelector('.current-tables');if(ar){ar.querySelectorAll('.row.match.no-gutter').forEach((r,i)=>{if(i===0)return;let isC=r.classList.contains('complete');let p1E=r.querySelector('.player1 .name');let p2E=r.querySelector('.player2 .name');let tE=r.querySelector('.tablenumber');let p1=p1E?p1E.textContent.replace(/[\\r\\n]+/g,' ').trim():"Player 1";let p2=p2E?p2E.textContent.replace(/[\\r\\n]+/g,' ').trim():"Player 2";let num=tE?parseInt(tE.textContent.trim(),10)||i:i;tbls.push({num:num,p1:p1,p2:p2,isOfficialDone:isC});});}}divs[tId]={name:dName,round:rNum,rawLabel:rName,tables:tbls};});let p=encodeURIComponent(JSON.stringify({title:t,dateStr:ds,divisions:divs}));let w=window.open('${targetUrl}#data='+p,'TableOpsWindow');if(!w)alert('Popup blocked!');})();`;
+                const code = `javascript:(function(){if(!window.location.href.includes('rk9.gg/pairings')){alert('Please run this on an RK9 pairings page.');return;}let t=document.querySelector('h4')?.textContent.trim()||'Tournament Pairings';let ds=document.querySelector('h5')?.textContent.split('\\n')[0].trim()||'';let divs={};document.querySelectorAll('ul.nav-pills li.nav-item a.nav-link').forEach(l=>{let tId=(l.getAttribute('href')||'').replace('#','');let rName=l.textContent.trim();let dName=rName;let rNum=1;let m=rName.match(/^(.*?)\\s+in\\s+Round\\s+(\\d+)/i);if(m){dName=m[1].trim();rNum=parseInt(m[2],10);}let dp=document.getElementById(tId);let tbls=[];if(dp){let ar=dp.querySelector('.current-tables.active, .current-tables.show')||dp.querySelector('.current-tables');if(ar){ar.querySelectorAll('.row.match.no-gutter').forEach((r,i)=>{if(i===0)return;let isC=r.classList.contains('complete');let p1E=r.querySelector('.player1 .name');let p2E=r.querySelector('.player2 .name');let tE=r.querySelector('.tablenumber');let p1="Player 1";let p2="Player 2";let num=tE?parseInt(tE.textContent.trim(),10)||i:i;tbls.push({num:num,p1:p1,p2:p2,isOfficialDone:isC});});}}divs[tId]={name:dName,round:rNum,rawLabel:rName,tables:tbls};});let p=encodeURIComponent(JSON.stringify({title:t,dateStr:ds,divisions:divs}));let w=window.open('${targetUrl}#data='+p,'TableOpsWindow');if(!w)alert('Popup blocked!');})();`;
                 btn.href = code;
             }
         }
@@ -1262,8 +1262,8 @@
                             const tNumEl = row.querySelector('.tablenumber');
                             
                             let tNum = tNumEl ? parseInt(tNumEl.textContent.trim(), 10) || rIdx : rIdx;
-                            let p1 = p1El ? p1El.textContent.replace(/[\r\n]+/g, ' ').trim() : "Player 1";
-                            let p2 = p2El ? p2El.textContent.replace(/[\r\n]+/g, ' ').trim() : "Player 2";
+                            let p1 = "Player 1";
+                            let p2 = "Player 2";
 
                             tableList.push({
                                 num: tNum,
