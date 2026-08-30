@@ -821,7 +821,7 @@
                 myPeer.on('open', () => {
                     logDebug("myPeer OPEN. Connecting to target...");
                     const cleanTarget = normalizeRoomId(targetRoom);
-                    const conn = myPeer.connect(cleanTarget, { reliable: true });
+                    const conn = myPeer.connect(cleanTarget);
                     logDebug("myPeer.connect() called");
                     setupClientConnection(conn, targetRoom);
                 });
@@ -906,12 +906,21 @@
                     updateStaffCount();
                 });
 
-                // Monitor ICE Connection State if possible
-                if (conn.peerConnection) {
-                    conn.peerConnection.oniceconnectionstatechange = () => {
-                        logDebug(`ICE State ${conn.peer}: ${conn.peerConnection.iceConnectionState}`);
-                    };
-                }
+                // Monitor ICE Connection State reliably
+                const iceInterval = setInterval(() => {
+                    if (conn.peerConnection) {
+                        const state = conn.peerConnection.iceConnectionState;
+                        if (!conn._lastIceState || conn._lastIceState !== state) {
+                            logDebug(`ICE State Host->${conn.peer}: ${state}`);
+                            conn._lastIceState = state;
+                        }
+                        if (state === 'failed' || state === 'closed' || state === 'disconnected') {
+                            clearInterval(iceInterval);
+                        }
+                    } else {
+                        logDebug(`Host: conn.peerConnection is undefined!`);
+                    }
+                }, 1000);
 
                 conn.on('data', (data) => {
                     logDebug(`Host received data: ${data.type}`);
@@ -951,21 +960,21 @@
         function setupClientConnection(conn, roomName) {
             logDebug("setupClientConnection called");
 
-            // Monitor ICE Connection State
-            if (conn.peerConnection) {
-                conn.peerConnection.oniceconnectionstatechange = () => {
-                    logDebug(`ICE State (Client): ${conn.peerConnection.iceConnectionState}`);
-                };
-            } else {
-                // If peerConnection isn't ready immediately, we can poll or wait for open
-                setTimeout(() => {
-                    if (conn.peerConnection) {
-                        conn.peerConnection.oniceconnectionstatechange = () => {
-                            logDebug(`ICE State (Client): ${conn.peerConnection.iceConnectionState}`);
-                        };
+            // Monitor ICE Connection State reliably
+            const iceInterval = setInterval(() => {
+                if (conn.peerConnection) {
+                    const state = conn.peerConnection.iceConnectionState;
+                    if (!conn._lastIceState || conn._lastIceState !== state) {
+                        logDebug(`ICE State Client: ${state}`);
+                        conn._lastIceState = state;
                     }
-                }, 1000);
-            }
+                    if (state === 'failed' || state === 'closed' || state === 'disconnected') {
+                        clearInterval(iceInterval);
+                    }
+                } else {
+                    logDebug(`Client: conn.peerConnection is undefined!`);
+                }
+            }, 1000);
 
             const onOpen = () => {
                 logDebug("Client conn.on('open') fired!");
