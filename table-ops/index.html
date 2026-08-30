@@ -652,7 +652,11 @@
             <div class="setup-grid" style="grid-template-columns: auto auto auto 1fr;">
                 <a href="#" id="bookmarklet-btn" class="btn-primary" style="text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; font-size: 13px;" onclick="event.preventDefault(); alert('Drag this button to your bookmarks bar!');">🔖 Sync to Table Ops</a>
                 <button type="button" class="btn-primary" onclick="openPasteModal()">📋 Paste RK9 HTML</button>
-                <button type="button" onclick="openJoinModal()">🔑 Join as Judge</button>
+                <button type="button" class="btn-secondary" onclick="document.getElementById('join-modal').style.display='flex'">🔑 Join as Judge</button>
+                <button type="button" class="btn-secondary" style="font-size:12px;" onclick="document.getElementById('debug-log').style.display=document.getElementById('debug-log').style.display==='none'?'block':'none'">🐞 Debug</button>
+            </div>
+            <div id="debug-log" style="display:none; font-family: monospace; font-size: 10px; background: #111; color: #0f0; padding: 10px; margin-top: 10px; max-height: 150px; overflow-y: auto; border-radius: 6px;">
+                --- Debug Logs ---<br>
             </div>
             <div style="margin-top: 12px; font-size: 13px; color: var(--muted); line-height: 1.4;">
                 <strong>How to load data:</strong> Drag the 🔖 button to your bookmarks bar. Go to the RK9 pairings page and click the bookmark to send data here. Or, copy the RK9 page text/HTML and use the Paste button.
@@ -784,9 +788,21 @@
         let connectedPeers = [];
 
         // ---------------------------------------------------------
+        function logDebug(msg) {
+            const l = document.getElementById('debug-log');
+            if (l) {
+                const time = new Date().toLocaleTimeString();
+                l.innerHTML += `[${time}] ${msg}<br>`;
+                l.scrollTop = l.scrollHeight;
+            }
+            console.log("[P2P Debug]", msg);
+        }
+
+        // ---------------------------------------------------------
         // PEERJS P2P REALTIME ENGINE
         // ---------------------------------------------------------
         function initP2P() {
+            logDebug("initP2P started");
             const urlParams = new URLSearchParams(window.location.search);
             const targetRoom = urlParams.get('room');
 
@@ -794,20 +810,24 @@
                 // Client / Floor Judge Mode
                 isHost = false;
                 myRoomId = 'PKM-JUDGE-' + Math.random().toString(36).substring(2, 7);
+                logDebug(`Client Mode. ID=${myRoomId}, Target=${targetRoom}`);
                 document.getElementById('peer-status-text').textContent = `Connecting to ${targetRoom}...`;
                 document.getElementById('peer-status-dot').className = 'status-dot connecting';
 
                 myPeer = new Peer(myRoomId, {
-                    config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' } ] }
+                    config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' } ] },
+                    debug: 3
                 });
                 myPeer.on('open', () => {
+                    logDebug("myPeer OPEN. Connecting to target...");
                     const cleanTarget = normalizeRoomId(targetRoom);
                     const conn = myPeer.connect(cleanTarget, { reliable: true });
+                    logDebug("myPeer.connect() called");
                     setupClientConnection(conn, targetRoom);
                 });
 
                 myPeer.on('error', (err) => {
-                    console.error("PeerJS Error:", err);
+                    logDebug("myPeer ERROR: " + err.type + " " + err.message);
                     document.getElementById('peer-status-text').textContent = 'P2P: Error connecting to PIN';
                     document.getElementById('peer-status-dot').className = 'status-dot';
                 });
@@ -830,20 +850,24 @@
         function startHost(pin) {
             isHost = true;
             myRoomId = normalizeRoomId(pin);
+            logDebug(`startHost called. ID=${myRoomId}`);
             document.getElementById('custom-room-input').value = myRoomId.replace('PKM-', '');
 
             if (myPeer) myPeer.destroy();
 
             myPeer = new Peer(myRoomId, {
-                config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' } ] }
+                config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' } ] },
+                debug: 3
             });
             myPeer.on('open', (id) => {
+                logDebug("Host myPeer OPEN");
                 document.getElementById('peer-status-text').textContent = `Host: ${myRoomId} (${connectedPeers.length} staff)`;
                 document.getElementById('peer-status-dot').className = 'status-dot online';
                 generateQrCode(getShareUrl());
             });
 
             myPeer.on('connection', (conn) => {
+                logDebug(`Host received connection from: ${conn.peer}`);
                 connectedPeers.push(conn);
                 
                 const updateStaffCount = () => {
@@ -852,6 +876,7 @@
                 updateStaffCount();
 
                 const sendSync = () => {
+                    logDebug(`Host sending SYNC_BOARD to ${conn.peer}`);
                     conn.send({
                         type: 'SYNC_BOARD',
                         tournament,
@@ -860,22 +885,36 @@
                 };
 
                 if (conn.open) {
+                    logDebug(`conn to ${conn.peer} already open`);
                     sendSync();
                 } else {
-                    conn.on('open', sendSync);
+                    conn.on('open', () => {
+                        logDebug(`conn.on('open') fired for ${conn.peer}`);
+                        sendSync();
+                    });
                 }
 
                 conn.on('close', () => {
+                    logDebug(`conn.on('close') from ${conn.peer}`);
                     connectedPeers = connectedPeers.filter(p => p !== conn);
                     updateStaffCount();
                 });
                 
-                conn.on('error', () => {
+                conn.on('error', (e) => {
+                    logDebug(`conn.on('error') from ${conn.peer}: ` + (e ? e.message : 'unknown'));
                     connectedPeers = connectedPeers.filter(p => p !== conn);
                     updateStaffCount();
                 });
 
+                // Monitor ICE Connection State if possible
+                if (conn.peerConnection) {
+                    conn.peerConnection.oniceconnectionstatechange = () => {
+                        logDebug(`ICE State ${conn.peer}: ${conn.peerConnection.iceConnectionState}`);
+                    };
+                }
+
                 conn.on('data', (data) => {
+                    logDebug(`Host received data: ${data.type}`);
                     if (data.type === 'UPDATE_TABLE_STATE') {
                         tableStates[data.key] = data.state;
                         saveLocalState();
@@ -910,18 +949,39 @@
         }
 
         function setupClientConnection(conn, roomName) {
+            logDebug("setupClientConnection called");
+
+            // Monitor ICE Connection State
+            if (conn.peerConnection) {
+                conn.peerConnection.oniceconnectionstatechange = () => {
+                    logDebug(`ICE State (Client): ${conn.peerConnection.iceConnectionState}`);
+                };
+            } else {
+                // If peerConnection isn't ready immediately, we can poll or wait for open
+                setTimeout(() => {
+                    if (conn.peerConnection) {
+                        conn.peerConnection.oniceconnectionstatechange = () => {
+                            logDebug(`ICE State (Client): ${conn.peerConnection.iceConnectionState}`);
+                        };
+                    }
+                }, 1000);
+            }
+
             const onOpen = () => {
+                logDebug("Client conn.on('open') fired!");
                 document.getElementById('peer-status-text').textContent = `Staff Mode: ${roomName}`;
                 document.getElementById('peer-status-dot').className = 'status-dot online';
             };
             
             if (conn.open) {
+                logDebug("Client conn already open");
                 onOpen();
             } else {
                 conn.on('open', onOpen);
             }
 
             conn.on('data', (data) => {
+                logDebug(`Client received data: ${data.type}`);
                 if (data.type === 'SYNC_BOARD') {
                     tournament = data.tournament;
                     tableStates = data.tableStates;
@@ -937,8 +997,13 @@
             });
 
             conn.on('close', () => {
+                logDebug("Client conn.on('close') fired");
                 document.getElementById('peer-status-text').textContent = 'P2P: Disconnected from Host';
                 document.getElementById('peer-status-dot').className = 'status-dot';
+            });
+
+            conn.on('error', (err) => {
+                logDebug("Client conn ERROR: " + (err ? err.message : 'unknown'));
             });
 
             window.hostConnection = conn;
