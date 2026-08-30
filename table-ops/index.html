@@ -651,7 +651,7 @@
         <div class="panel">
             <div class="setup-grid" style="grid-template-columns: auto auto auto 1fr;">
                 <a href="#" id="bookmarklet-btn" class="btn-primary" style="text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; font-size: 13px;" onclick="event.preventDefault(); alert('Drag this button to your bookmarks bar!');">🔖 Sync to Table Ops</a>
-                <button type="button" class="btn-primary" onclick="openPasteModal()">📋 Paste RK9 HTML</button>
+                <button type="button" class="btn-primary" onclick="openPasteModal()">📋 Paste HTML</button>
                 <button type="button" class="btn-secondary" onclick="document.getElementById('join-modal').style.display='flex'">🔑 Join as Judge</button>
                 <button type="button" class="btn-secondary" style="font-size:12px;" onclick="document.getElementById('debug-log').style.display=document.getElementById('debug-log').style.display==='none'?'block':'none'">🐞 Debug</button>
             </div>
@@ -659,7 +659,7 @@
                 --- Debug Logs ---<br>
             </div>
             <div style="margin-top: 12px; font-size: 13px; color: var(--muted); line-height: 1.4;">
-                <strong>How to load data:</strong> Drag the 🔖 button to your bookmarks bar. Go to the RK9 pairings page and click the bookmark to send data here. Or, copy the RK9 page text/HTML and use the Paste button.
+                <strong>How to load data:</strong> Drag the 🔖 button to your bookmarks bar. Go to the pairings page and click the bookmark to send data here. Or, copy the pairings page text/HTML and use the Paste button.
             </div>
         </div>
 
@@ -706,7 +706,7 @@
         <div class="tables-grid" id="tables-grid-container">
             <div class="empty-grid">
                 <h3>No Tournament Loaded</h3>
-                <p>Paste an RK9 pairings URL above and click "Load Tournament" to initialize the live table grid.</p>
+                <p>Paste a pairings URL above and click "Load Tournament" to initialize the live table grid.</p>
             </div>
         </div>
     </div>
@@ -754,8 +754,8 @@
     <!-- Paste HTML Modal -->
     <div class="modal-overlay" id="paste-modal" onclick="if(event.target === this) closePasteModal()">
         <div class="modal-card" style="max-width: 600px;">
-            <h2>Paste RK9 Pairings HTML</h2>
-            <p>Go to the RK9 Pairings page, press <strong>Ctrl+A</strong> then <strong>Ctrl+C</strong>, and paste here (Ctrl+V).</p>
+            <h2>Paste Pairings HTML</h2>
+            <p>Go to the Pairings page, press <strong>Ctrl+A</strong> then <strong>Ctrl+C</strong>, and paste here (Ctrl+V).</p>
             <textarea id="paste-html-input" style="width: 100%; height: 200px; background: var(--surf2); color: #fff; border: 1px solid var(--bord); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; margin-bottom: 16px; outline: none;"></textarea>
             <div style="display: flex; gap: 8px;">
                 <button type="button" class="btn-primary" style="flex: 1;" onclick="processPastedHtml()">Load Pairings</button>
@@ -774,7 +774,7 @@
             title: '',
             dateStr: '',
             activeDivisionId: '',
-            divisions: {} // divId -> { name, round, tables: [ { num, p1, p2, isRk9Done } ] }
+            divisions: {} // divId -> { name, round, tables: [ { num, p1, p2, isOfficialDone } ] }
         };
 
         // Table manual overrides: key: `${divId}_${round}_${tableNum}` -> { status: 'default'|'playing'|'judge'|'empty', timestamp: number }
@@ -1148,7 +1148,7 @@
             const btn = document.getElementById('bookmarklet-btn');
             if (btn) {
                 const targetUrl = window.location.href.split('#')[0];
-                const code = `javascript:(function(){if(!window.location.href.includes('rk9.gg/pairings')){alert('Please run this on an RK9 pairings page.');return;}let t=document.querySelector('h4')?.textContent.trim()||'Tournament Pairings';let ds=document.querySelector('h5')?.textContent.split('\\n')[0].trim()||'';let divs={};document.querySelectorAll('ul.nav-pills li.nav-item a.nav-link').forEach(l=>{let tId=(l.getAttribute('href')||'').replace('#','');let rName=l.textContent.trim();let dName=rName;let rNum=1;let m=rName.match(/^(.*?)\\s+in\\s+Round\\s+(\\d+)/i);if(m){dName=m[1].trim();rNum=parseInt(m[2],10);}let dp=document.getElementById(tId);let tbls=[];if(dp){let ar=dp.querySelector('.current-tables.active, .current-tables.show')||dp.querySelector('.current-tables');if(ar){ar.querySelectorAll('.row.match.no-gutter').forEach((r,i)=>{if(i===0)return;let isC=r.classList.contains('complete');let p1E=r.querySelector('.player1 .name');let p2E=r.querySelector('.player2 .name');let tE=r.querySelector('.tablenumber');let p1=p1E?p1E.textContent.replace(/[\\r\\n]+/g,' ').trim():"Player 1";let p2=p2E?p2E.textContent.replace(/[\\r\\n]+/g,' ').trim():"Player 2";let num=tE?parseInt(tE.textContent.trim(),10)||i:i;tbls.push({num:num,p1:p1,p2:p2,isRk9Done:isC});});}}divs[tId]={name:dName,round:rNum,rawLabel:rName,tables:tbls};});let p=encodeURIComponent(JSON.stringify({title:t,dateStr:ds,divisions:divs}));let w=window.open('${targetUrl}#data='+p,'TableOpsWindow');if(!w)alert('Popup blocked!');})();`;
+                const code = `javascript:(function(){if(!window.location.href.includes('rk9.gg/pairings')){alert('Please run this on an RK9 pairings page.');return;}let t=document.querySelector('h4')?.textContent.trim()||'Tournament Pairings';let ds=document.querySelector('h5')?.textContent.split('\\n')[0].trim()||'';let divs={};document.querySelectorAll('ul.nav-pills li.nav-item a.nav-link').forEach(l=>{let tId=(l.getAttribute('href')||'').replace('#','');let rName=l.textContent.trim();let dName=rName;let rNum=1;let m=rName.match(/^(.*?)\\s+in\\s+Round\\s+(\\d+)/i);if(m){dName=m[1].trim();rNum=parseInt(m[2],10);}let dp=document.getElementById(tId);let tbls=[];if(dp){let ar=dp.querySelector('.current-tables.active, .current-tables.show')||dp.querySelector('.current-tables');if(ar){ar.querySelectorAll('.row.match.no-gutter').forEach((r,i)=>{if(i===0)return;let isC=r.classList.contains('complete');let p1E=r.querySelector('.player1 .name');let p2E=r.querySelector('.player2 .name');let tE=r.querySelector('.tablenumber');let p1=p1E?p1E.textContent.replace(/[\\r\\n]+/g,' ').trim():"Player 1";let p2=p2E?p2E.textContent.replace(/[\\r\\n]+/g,' ').trim():"Player 2";let num=tE?parseInt(tE.textContent.trim(),10)||i:i;tbls.push({num:num,p1:p1,p2:p2,isOfficialDone:isC});});}}divs[tId]={name:dName,round:rNum,rawLabel:rName,tables:tbls};});let p=encodeURIComponent(JSON.stringify({title:t,dateStr:ds,divisions:divs}));let w=window.open('${targetUrl}#data='+p,'TableOpsWindow');if(!w)alert('Popup blocked!');})();`;
                 btn.href = code;
             }
         }
@@ -1210,7 +1210,7 @@
                 closePasteModal();
             } catch(e) {
                 console.error("Error parsing pasted HTML:", e);
-                alert("Error parsing HTML. Make sure you copied from the RK9 pairings page.");
+                alert("Error parsing HTML. Make sure you copied from the pairings page.");
             }
         }
 
@@ -1269,7 +1269,7 @@
                                 num: tNum,
                                 p1,
                                 p2,
-                                isRk9Done: isComplete
+                                isOfficialDone: isComplete
                             });
                         });
                     }
@@ -1311,7 +1311,7 @@
                 const key = `${tournament.activeDivisionId}_R${div.round}_${t.num}`;
                 const st = tableStates[key];
                 
-                if (st && st.status === 'empty' && !t.isRk9Done) {
+                if (st && st.status === 'empty' && !t.isOfficialDone) {
                     const elapsedSec = Math.floor((now - st.timestamp) / 1000);
                     if (elapsedSec >= 120) {
                         ghostCount++;
@@ -1329,7 +1329,7 @@
                     if (st.status === 'judge') {
                         timerEl.textContent = `⏱️ ${timeStr}`;
                     } else if (st.status === 'empty') {
-                        if (elapsed >= 120 && !t.isRk9Done) {
+                        if (elapsed >= 120 && !t.isOfficialDone) {
                             timerEl.textContent = `⚠️ GHOST (${timeStr})`;
                             timerEl.parentElement.parentElement.className = 'table-card st-ghost';
                         } else {
@@ -1407,7 +1407,7 @@
                 let effectiveState = customState.status;
                 let isGhost = false;
 
-                if (table.isRk9Done) {
+                if (table.isOfficialDone) {
                     effectiveState = 'complete';
                     completeCount++;
                 } else if (customState.status === 'playing') {
@@ -1429,7 +1429,7 @@
                 if (activeFilter === 'judge' && effectiveState !== 'judge') return;
                 if (activeFilter === 'ghost' && !isGhost) return;
                 if (activeFilter === 'empty' && effectiveState !== 'empty' && !isGhost) return;
-                if (activeFilter === 'complete' && !table.isRk9Done) return;
+                if (activeFilter === 'complete' && !table.isOfficialDone) return;
 
                 // Search check
                 if (searchQuery) {

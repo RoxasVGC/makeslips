@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RK9 Round Monitor | PKM Tools</title>
+    <title>Round Monitor | PKM Tools</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -450,7 +450,7 @@
         <a href="../" class="back-link">← Back to PKM Tools</a>
 
         <header class="hdr">
-            <h1>RK9 ROUND MONITOR</h1>
+            <h1>ROUND MONITOR</h1>
             <p>Real-time tournament round progress tracker & browser push notifications</p>
         </header>
 
@@ -468,7 +468,7 @@
                 <span>Add Tournament to Monitor</span>
             </div>
             <div class="form-grid">
-                <input type="text" id="tourney-url-input" placeholder="Paste RK9 pairings URL (e.g. https://rk9.gg/pairings/TU02wKzv4cT2BBiI9dEg)...">
+                <input type="text" id="tourney-url-input" placeholder="Paste official pairings URL...">
                 <button type="button" onclick="addTournamentFromInput()">+ Add Tournament</button>
             </div>
 
@@ -610,7 +610,7 @@
             if (Notification.permission !== 'granted') {
                 requestNotificationPermission();
             } else {
-                sendNotification("🏆 RK9 Round Monitor (Test)", "Round 5: Only 4 tables remaining (96.5% completed)!");
+                sendNotification("🏆 Round Monitor (Test)", "Round 5: Only 4 tables remaining (96.5% completed)!");
             }
         }
 
@@ -664,7 +664,7 @@
             throw new Error(lastErr ? lastErr.message : "Unable to reach RK9. Set a custom CORS proxy (like Cloudflare Workers) in Settings.");
         }
 
-        function parseRk9Html(html) {
+        function parsePairingsHtml(html) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
 
@@ -739,7 +739,7 @@
             for (const tourney of tournaments) {
                 try {
                     const html = await fetchWithFallback(tourney.url);
-                    const data = parseRk9Html(html);
+                    const data = parsePairingsHtml(html);
                     tourney.lastData = data;
                     tourney.error = null;
                     tourney.lastCheck = new Date().toLocaleTimeString();
@@ -791,7 +791,7 @@
                 container.innerHTML = `
                     <div class="panel empty-state">
                         <h3>No Tournaments Added</h3>
-                        <p>Paste an RK9 pairings link above to start tracking round progress in real time.</p>
+                        <p>Paste a pairings link above to start tracking round progress in real time.</p>
                     </div>
                 `;
                 return;
@@ -909,7 +909,7 @@
             const url = (input.value || '').trim();
 
             if (!url) {
-                alert("Please paste an RK9 pairings URL.");
+                alert("Please paste a pairings URL.");
                 return;
             }
 

@@ -9,44 +9,16 @@ Hosted on **GitHub Pages**.
 ## 🛠️ Tools Included
 
 - [**Match Slips Generator**](makeslips/): Create and print tournament match slips with Code 128 barcodes, check-digit calculations, and direct roster import from TOM (Tournament Operation Manager).
-- [**RK9 Round Monitor**](rk9-monitor/): Live round progress tracker for official RK9 pairings with multi-division support (Masters, Seniors, Juniors) and native browser push notifications when rounds near completion.
+- [**Round Monitor**](rk9-monitor/): Live round progress tracker for official tournament pairings with multi-division support (Masters, Seniors, Juniors) and native browser push notifications when rounds near completion.
 - [**Table Operations Grid**](table-ops/): Real-time collaborative table management and floor operations grid for judges and staff. Features instant P2P smartphone sync via QR code, active ruling timers, and automatic **Ghost Table** detection ($T \ge 2\text{ min}$ empty without result).
   - **⚠️ Network Requirements for P2P Sync**: 
     1. **Same Local Network**: The Host PC and Judges' smartphones must be connected to the exact same Wi-Fi network (or a dedicated 4G/5G portable router).
     2. **No Client Isolation**: The Wi-Fi network MUST have "AP Isolation" / "Client Isolation" disabled. (Public guest networks and mobile phone hotspots often enable this by default, blocking WebRTC P2P).
     3. **Internet Access**: The local router must have an active internet connection (even a minimal data plan) to perform the initial 2-second PeerJS matchmaking handshake. After the devices connect, traffic remains 100% local.
-- **VGC Teamlist Generator** *(Coming Soon)*: Generate graphic and printable team sheets from Poképaste URLs.
-- **VGC EVs Converter** *(Coming Soon)*: EV conversions and damage calculation paste formatting.
 
 ---
 
 ## ⚖️ RK9 Terms of Service Compliance & Architectural Design
-
-The **RK9 Round Monitor** and **Table Operations Grid** have been designed from the ground up to operate in full accordance with the spirit and text of **RK9 Labs' Terms of Service** (specifically *Section 3: Your Use of the Services* and *Section 5.3: Prohibited Uses*).
-
-### 1. No Data Harvesting or Personal Data Storage (Section 5.3, Clauses 1 & 8)
-* **What the ToS Prohibits**: Collecting, harvesting, or storing personal data about users or misappropriating event data for commercial gain.
-* **Our Architecture**:
-  * The tool does **not** collect, store, index, or database player personal info or tournament archives.
-  * Calculations (such as table status tracking and completed tables) are computed **in-memory** in the user's browser session and immediately discarded on page refresh. Zero data is persisted or shared externally.
-
-### 2. Conservative, Human-Equivalent Polling (Section 5.3, Clause 5)
-* **What the ToS Prohibits**: Taking any action that imposes an unreasonable load on RK9 computer or network equipment.
-* **Our Architecture**:
-  * Polling is strictly throttled to conservative intervals (**45–60 seconds** by default).
-  * This generates approximately **1 request per minute** per monitored tournament—an identical footprint to a single attendee manually refreshing the pairings page on their smartphone.
-
-### 3. Read-Only Public Event Data (Section 5.3, Clauses 2 & 10)
-* **What the ToS Prohibits**: Using automated bots or scripts to modify or automate operations within the Service (e.g. automating tournament registration, botting deck submissions, or bypassing authentication/security controls).
-* **Our Architecture**:
-  * The monitor is **strictly read-only**. It does not automate any actions, submissions, or account interactions.
-  * It only queries public tournament URLs (`rk9.gg/pairings/...`) that are intentionally made public for players and spectators during live events.
-
-### 4. Direct Client-Side Proxy Architecture
-* **How it works**: A dedicated, stateless Cloudflare Worker acts as a lightweight CORS pass-through between the user's browser and the public RK9 pairings page.
-* **Integrity**: The proxy does not cache, alter, or inject payloads; it passes standard browser headers to request public event markup.
-
----
 
 ## 📁 Project Structure
 
@@ -55,7 +27,7 @@ pkmtools/
 ├── index.html              # Main Portal / Hub landing page
 ├── makeslips/              # Tool: Match Slips Generator
 │   └── index.html
-├── rk9-monitor/            # Tool: RK9 Round Monitor
+├── rk9-monitor/            # Tool: Round Monitor
 │   └── index.html
 ├── table-ops/              # Tool: Table Operations Grid
 │   └── index.html
