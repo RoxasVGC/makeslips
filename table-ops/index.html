@@ -715,13 +715,14 @@
 
         <!-- Setup & Load Tournament Panel -->
         <div class="panel">
-            <div class="setup-grid" style="grid-template-columns: auto auto auto auto auto 1fr;">
+            <div class="setup-grid" style="grid-template-columns: auto auto auto auto auto auto 1fr;">
                 <a href="#" id="bookmarklet-btn" class="btn-primary"
                     style="text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; font-size: 13px;"
                     onclick="event.preventDefault(); alert('Drag this button to your bookmarks bar!');">🔖 Sync to Table
                     Ops</a>
                 <button type="button" class="btn-primary" onclick="openPasteModal()">📋 Paste HTML</button>
-                <button type="button" class="btn-primary" onclick="startTomSync()" style="background-color: #f59e0b; border-color: #d97706;">📂 TOM Sync (.tdf)</button>
+                <button type="button" class="btn-primary" id="tom-sync-btn" onclick="startTomSync()" style="background-color: #f59e0b; border-color: #d97706;">📂 TOM Sync (.tdf)</button>
+                <button type="button" class="btn-primary" id="tom-force-sync-btn" onclick="forceTomSync()" style="display: none; background-color: #0284c7; border-color: #0369a1;">🔄 Sync Now</button>
                 <button type="button" class="btn-secondary" onclick="document.getElementById('tom-settings-modal').style.display='flex'">⚙️ TOM Options</button>
                 <button type="button" class="btn-secondary"
                     onclick="document.getElementById('join-modal').style.display='flex'">🔑 Join as Judge</button>
@@ -1415,6 +1416,13 @@
                 });
                 tomFileHandle = fileHandle;
                 
+                // Show the force sync button on main page
+                const forceBtn = document.getElementById('tom-force-sync-btn');
+                if (forceBtn) forceBtn.style.display = 'inline-block';
+                
+                const syncBtn = document.getElementById('tom-sync-btn');
+                if (syncBtn) syncBtn.innerHTML = '📂 Change TOM File';
+
                 await forceTomSync();
                 startTomInterval();
                 alert("✅ TOM Auto-Sync activated! Polling every " + (tomSyncIntervalMs/1000) + " seconds.");
