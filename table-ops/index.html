@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Table Operations Grid | PKM Tools</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap"
+        rel="stylesheet">
     <!-- PeerJS for P2P Realtime Sync -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <!-- QRCode.js for instant QR Room generation -->
@@ -21,15 +23,21 @@
             --bord-light: #3d3d66;
             --txt: #f2f2fa;
             --muted: #8e8eb2;
-            
+
             /* Status Colors */
-            --st-default: #e0e0ea;      /* White / Light Gray */
-            --st-playing: #ef4444;      /* Red */
-            --st-judge: #f59e0b;        /* Yellow / Amber */
-            --st-empty: #10b981;        /* Light Green */
-            --st-ghost: #a855f7;        /* Purple */
-            --st-complete: #059669;     /* Deep Green */
-            
+            --st-default: #e0e0ea;
+            /* White / Light Gray */
+            --st-playing: #ef4444;
+            /* Red */
+            --st-judge: #f59e0b;
+            /* Yellow / Amber */
+            --st-empty: #10b981;
+            /* Light Green */
+            --st-ghost: #a855f7;
+            /* Purple */
+            --st-complete: #059669;
+            /* Deep Green */
+
             --acc2: #ffd166;
             --r: 12px;
             --fh: 'Bebas Neue', sans-serif;
@@ -55,7 +63,7 @@
             position: fixed;
             inset: 0;
             background: radial-gradient(ellipse at 15% 15%, rgba(168, 85, 247, 0.06) 0%, transparent 60%),
-                        radial-gradient(ellipse at 85% 85%, rgba(245, 158, 11, 0.05) 0%, transparent 60%);
+                radial-gradient(ellipse at 85% 85%, rgba(245, 158, 11, 0.05) 0%, transparent 60%);
             z-index: 0;
             pointer-events: none;
         }
@@ -121,7 +129,9 @@
         }
 
         @keyframes blink {
-            50% { opacity: 0.3; }
+            50% {
+                opacity: 0.3;
+            }
         }
 
         /* Main Header */
@@ -157,7 +167,7 @@
             border-radius: var(--r);
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
         }
 
         .setup-grid {
@@ -173,7 +183,8 @@
             }
         }
 
-        input[type="text"], select {
+        input[type="text"],
+        select {
             width: 100%;
             padding: 10px 14px;
             background: var(--surf2);
@@ -186,7 +197,8 @@
             transition: border-color 0.15s ease;
         }
 
-        input[type="text"]:focus, select:focus {
+        input[type="text"]:focus,
+        select:focus {
             border-color: var(--acc2);
         }
 
@@ -268,14 +280,15 @@
             transition: all 0.15s ease;
         }
 
-        .stat-pill:hover, .stat-pill.active {
+        .stat-pill:hover,
+        .stat-pill.active {
             border-color: #fff;
             transform: translateY(-2px);
         }
 
         .stat-pill.active {
             background: var(--surf3);
-            box-shadow: 0 0 12px rgba(255,255,255,0.1);
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
         }
 
         .stat-num {
@@ -359,7 +372,7 @@
 
         .table-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         }
 
         .table-card:active {
@@ -428,36 +441,58 @@
             border-color: var(--bord-light);
             background: var(--surf);
         }
-        .table-card.st-default .t-num { color: var(--st-default); }
+
+        .table-card.st-default .t-num {
+            color: var(--st-default);
+        }
 
         .table-card.st-playing {
             border-color: var(--st-playing);
             background: rgba(239, 68, 68, 0.12);
         }
-        .table-card.st-playing .t-num { color: #fca5a5; }
+
+        .table-card.st-playing .t-num {
+            color: #fca5a5;
+        }
 
         .table-card.st-judge {
             border-color: var(--st-judge);
             background: rgba(245, 158, 11, 0.14);
         }
-        .table-card.st-judge .t-num { color: #fde68a; }
+
+        .table-card.st-judge .t-num {
+            color: #fde68a;
+        }
 
         .table-card.st-empty {
             border-color: var(--st-empty);
             background: rgba(16, 185, 129, 0.12);
         }
-        .table-card.st-empty .t-num { color: #a7f3d0; }
+
+        .table-card.st-empty .t-num {
+            color: #a7f3d0;
+        }
 
         .table-card.st-ghost {
             border-color: var(--st-ghost);
             background: rgba(168, 85, 247, 0.22);
             animation: pulseGhost 1.8s infinite;
         }
-        .table-card.st-ghost .t-num { color: #f5d0fe; }
+
+        .table-card.st-ghost .t-num {
+            color: #f5d0fe;
+        }
 
         @keyframes pulseGhost {
-            0%, 100% { box-shadow: 0 0 16px rgba(168, 85, 247, 0.5); }
-            50% { box-shadow: 0 0 32px rgba(168, 85, 247, 0.8); }
+
+            0%,
+            100% {
+                box-shadow: 0 0 16px rgba(168, 85, 247, 0.5);
+            }
+
+            50% {
+                box-shadow: 0 0 32px rgba(168, 85, 247, 0.8);
+            }
         }
 
         .table-card.st-complete {
@@ -465,7 +500,10 @@
             background: rgba(5, 150, 105, 0.08);
             opacity: 0.65;
         }
-        .table-card.st-complete .t-num { color: #6ee7b7; }
+
+        .table-card.st-complete .t-num {
+            color: #6ee7b7;
+        }
 
         .card-hdr {
             display: flex;
@@ -490,12 +528,37 @@
             letter-spacing: 0.5px;
         }
 
-        .badge-default { background: var(--surf2); color: var(--muted); border: 1px solid var(--bord); }
-        .badge-playing { background: var(--st-playing); color: #fff; }
-        .badge-judge { background: var(--st-judge); color: #000; }
-        .badge-empty { background: var(--st-empty); color: #000; }
-        .badge-ghost { background: var(--st-ghost); color: #fff; animation: blink 1s infinite; }
-        .badge-complete { background: #065f46; color: #a7f3d0; }
+        .badge-default {
+            background: var(--surf2);
+            color: var(--muted);
+            border: 1px solid var(--bord);
+        }
+
+        .badge-playing {
+            background: var(--st-playing);
+            color: #fff;
+        }
+
+        .badge-judge {
+            background: var(--st-judge);
+            color: #000;
+        }
+
+        .badge-empty {
+            background: var(--st-empty);
+            color: #000;
+        }
+
+        .badge-ghost {
+            background: var(--st-ghost);
+            color: #fff;
+            animation: blink 1s infinite;
+        }
+
+        .badge-complete {
+            background: #065f46;
+            color: #a7f3d0;
+        }
 
         .players-names {
             font-size: 12px;
@@ -528,7 +591,7 @@
             color: var(--muted);
             font-weight: 700;
             padding-top: 6px;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .active-timer {
@@ -541,7 +604,7 @@
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(6px);
             z-index: 999;
             display: none;
@@ -558,7 +621,7 @@
             max-width: 460px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
         }
 
         .modal-card h2 {
@@ -620,17 +683,19 @@
         }
     </style>
 </head>
+
 <body>
     <div class="wrap">
         <div class="top-bar">
             <a href="../" class="back-link">← Back to PKM Tools</a>
-            
+
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <div class="peer-status" id="peer-status-box">
                     <span class="status-dot" id="peer-status-dot"></span>
                     <span id="peer-status-text">P2P: Initializing...</span>
                 </div>
-                <button type="button" id="haptic-toggle-btn" class="btn-small" onclick="toggleHaptics()">📳 Vibration: OFF</button>
+                <button type="button" id="haptic-toggle-btn" class="btn-small" onclick="toggleHaptics()">📳 Vibration:
+                    OFF</button>
                 <button type="button" class="btn-accent" onclick="openQrModal()">📱 Session PIN & QR Code</button>
             </div>
         </div>
@@ -643,23 +708,34 @@
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button type="button" onclick="openPasteModal()">📥 Manual Sync (Paste HTML)</button>
                 <button type="button" class="btn-danger" onclick="confirmResetRound()">🔄 Reset Round Overrides</button>
-                <button type="button" class="btn-danger" style="background-color: #991b1b; border-color: #7f1d1d;" onclick="clearSession()">🗑️ Clear Data & End Session</button>
+                <button type="button" class="btn-danger" style="background-color: #991b1b; border-color: #7f1d1d;"
+                    onclick="clearSession()">🗑️ Clear Data & End Session</button>
             </div>
         </header>
 
         <!-- Setup & Load Tournament Panel -->
         <div class="panel">
-            <div class="setup-grid" style="grid-template-columns: auto auto auto 1fr;">
-                <a href="#" id="bookmarklet-btn" class="btn-primary" style="text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; font-size: 13px;" onclick="event.preventDefault(); alert('Drag this button to your bookmarks bar!');">🔖 Sync to Table Ops</a>
+            <div class="setup-grid" style="grid-template-columns: auto auto auto auto auto 1fr;">
+                <a href="#" id="bookmarklet-btn" class="btn-primary"
+                    style="text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; font-size: 13px;"
+                    onclick="event.preventDefault(); alert('Drag this button to your bookmarks bar!');">🔖 Sync to Table
+                    Ops</a>
                 <button type="button" class="btn-primary" onclick="openPasteModal()">📋 Paste HTML</button>
-                <button type="button" class="btn-secondary" onclick="document.getElementById('join-modal').style.display='flex'">🔑 Join as Judge</button>
-                <button type="button" class="btn-secondary" style="font-size:12px;" onclick="document.getElementById('debug-log').style.display=document.getElementById('debug-log').style.display==='none'?'block':'none'">🐞 Debug</button>
+                <button type="button" class="btn-primary" onclick="startTomSync()" style="background-color: #f59e0b; border-color: #d97706;">📂 TOM Sync (.tdf)</button>
+                <button type="button" class="btn-secondary" onclick="document.getElementById('tom-settings-modal').style.display='flex'">⚙️ TOM Options</button>
+                <button type="button" class="btn-secondary"
+                    onclick="document.getElementById('join-modal').style.display='flex'">🔑 Join as Judge</button>
+                <button type="button" class="btn-secondary" style="font-size:12px;"
+                    onclick="document.getElementById('debug-log').style.display=document.getElementById('debug-log').style.display==='none'?'block':'none'">🐞
+                    Debug</button>
             </div>
-            <div id="debug-log" style="display:none; font-family: monospace; font-size: 10px; background: #111; color: #0f0; padding: 10px; margin-top: 10px; max-height: 150px; overflow-y: auto; border-radius: 6px;">
+            <div id="debug-log"
+                style="display:none; font-family: monospace; font-size: 10px; background: #111; color: #0f0; padding: 10px; margin-top: 10px; max-height: 150px; overflow-y: auto; border-radius: 6px;">
                 --- Debug Logs ---<br>
             </div>
             <div style="margin-top: 12px; font-size: 13px; color: var(--muted); line-height: 1.4;">
-                <strong>How to load data:</strong> Drag the 🔖 button to your bookmarks bar. Go to the pairings page and click the bookmark to send data here. Or, copy the pairings page text/HTML and use the Paste button.
+                <strong>How to load data:</strong> Drag the 🔖 button to your bookmarks bar. Go to the pairings page and
+                click the bookmark to send data here. Or, copy the pairings page text/HTML and use the Paste button.
             </div>
         </div>
 
@@ -697,7 +773,8 @@
                     <!-- Dynamic Division Chips -->
                 </div>
                 <div class="search-box">
-                    <input type="text" id="table-search" placeholder="Search table # or player..." oninput="renderTables()">
+                    <input type="text" id="table-search" placeholder="Search table # or player..."
+                        oninput="renderTables()">
                 </div>
             </div>
         </div>
@@ -716,19 +793,21 @@
         <div class="modal-card">
             <h2>Session PIN & QR Code</h2>
             <p>Judges can scan the QR code to connect instantly, or manually enter your Session PIN below.</p>
-            
+
             <div class="qr-wrap" id="qrcode-target"></div>
 
             <div class="room-code-box">
                 <label>Custom Session PIN / Room Password</label>
                 <div class="room-input-group">
-                    <input type="text" id="custom-room-input" placeholder="e.g. TORINO2026" style="font-weight: bold; text-transform: uppercase;">
+                    <input type="text" id="custom-room-input" placeholder="e.g. TORINO2026"
+                        style="font-weight: bold; text-transform: uppercase;">
                     <button type="button" class="btn-primary btn-small" onclick="applyCustomRoomPin()">Set PIN</button>
                 </div>
             </div>
 
             <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                <button type="button" class="btn-secondary" style="flex: 1;" onclick="copyRoomLink()">📋 Copy Join Link</button>
+                <button type="button" class="btn-secondary" style="flex: 1;" onclick="copyRoomLink()">📋 Copy Join
+                    Link</button>
                 <button type="button" style="flex: 1;" onclick="closeQrModal()">Done</button>
             </div>
         </div>
@@ -741,7 +820,8 @@
             <p>Enter the Session PIN / Room Code set by the tournament organizer.</p>
 
             <div style="margin-bottom: 16px;">
-                <input type="text" id="join-pin-input" placeholder="Enter Session PIN (e.g. TORINO2026)..." style="font-size: 16px; font-weight: bold; text-transform: uppercase; text-align: center;">
+                <input type="text" id="join-pin-input" placeholder="Enter Session PIN (e.g. TORINO2026)..."
+                    style="font-size: 16px; font-weight: bold; text-transform: uppercase; text-align: center;">
             </div>
 
             <div style="display: flex; gap: 8px;">
@@ -751,23 +831,41 @@
         </div>
     </div>
 
+    <!-- TOM Settings Modal -->
+    <div class="modal-overlay" id="tom-settings-modal" onclick="if(event.target === this) this.style.display='none'">
+        <div class="modal-card">
+            <h2>⚙️ TOM Sync Settings</h2>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 8px;">Auto-Sync Interval (Seconds)</label>
+                <input type="number" id="tom-interval-input" value="45" min="5" max="300" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--bord); background: var(--surf2); color: white;">
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 16px;">
+                <button type="button" class="btn-primary" style="flex: 1;" onclick="applyTomSettings()">Apply Interval</button>
+                <button type="button" class="btn-secondary" style="flex: 1;" onclick="document.getElementById('tom-settings-modal').style.display='none'">Close</button>
+            </div>
+            <hr style="border: 0; border-top: 1px solid var(--bord); margin: 24px 0;">
+            <button type="button" class="btn-primary" style="width: 100%; background-color: #0284c7; border-color: #0369a1;" onclick="forceTomSync()">🔄 Manual Force Sync Now</button>
+        </div>
+    </div>
+
     <!-- Paste HTML Modal -->
     <div class="modal-overlay" id="paste-modal" onclick="if(event.target === this) closePasteModal()">
         <div class="modal-card" style="max-width: 600px;">
             <h2>Paste Pairings HTML</h2>
-            <p>Go to the Pairings page, press <strong>Ctrl+A</strong> then <strong>Ctrl+C</strong>, and paste here (Ctrl+V).</p>
-            <textarea id="paste-html-input" style="width: 100%; height: 200px; background: var(--surf2); color: #fff; border: 1px solid var(--bord); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; margin-bottom: 16px; outline: none;"></textarea>
+            <p>Go to the Pairings page, press <strong>Ctrl+A</strong> then <strong>Ctrl+C</strong>, and paste here
+                (Ctrl+V).</p>
+            <textarea id="paste-html-input"
+                style="width: 100%; height: 200px; background: var(--surf2); color: #fff; border: 1px solid var(--bord); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; margin-bottom: 16px; outline: none;"></textarea>
             <div style="display: flex; gap: 8px;">
-                <button type="button" class="btn-primary" style="flex: 1;" onclick="processPastedHtml()">Load Pairings</button>
+                <button type="button" class="btn-primary" style="flex: 1;" onclick="processPastedHtml()">Load
+                    Pairings</button>
                 <button type="button" class="btn-secondary" style="flex: 1;" onclick="closePasteModal()">Cancel</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ---------------------------------------------------------
-        // APP STATE
-        // ---------------------------------------------------------
+
         let tournament = {
             url: '',
             id: '',
@@ -779,7 +877,7 @@
 
         // Table manual overrides: key: `${divId}_${round}_${tableNum}` -> { status: 'default'|'playing'|'judge'|'empty', timestamp: number }
         let tableStates = {};
-        
+
         let activeFilter = 'all'; // 'all', 'playing', 'judge', 'ghost', 'empty', 'complete'
         let ghostCheckTimer = null;
         let isHost = true;
@@ -815,12 +913,14 @@
                 document.getElementById('peer-status-dot').className = 'status-dot connecting';
 
                 myPeer = new Peer(myRoomId, {
-                    config: { 'iceServers': [ 
-                        { urls: 'stun:stun.l.google.com:19302' }, 
-                        { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-                        { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
-                    ] },
+                    config: {
+                        'iceServers': [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' },
+                            { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                            { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
+                        ]
+                    },
                     debug: 3
                 });
                 myPeer.on('open', () => {
@@ -861,12 +961,14 @@
             if (myPeer) myPeer.destroy();
 
             myPeer = new Peer(myRoomId, {
-                config: { 'iceServers': [ 
-                    { urls: 'stun:stun.l.google.com:19302' }, 
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-                    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
-                ] },
+                config: {
+                    'iceServers': [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                        { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
+                    ]
+                },
                 debug: 3
             });
             myPeer.on('open', (id) => {
@@ -879,7 +981,7 @@
             myPeer.on('connection', (conn) => {
                 logDebug(`Host received connection from: ${conn.peer}`);
                 connectedPeers.push(conn);
-                
+
                 const updateStaffCount = () => {
                     document.getElementById('peer-status-text').textContent = `Host: ${myRoomId} (${connectedPeers.length} staff)`;
                 };
@@ -909,7 +1011,7 @@
                     connectedPeers = connectedPeers.filter(p => p !== conn);
                     updateStaffCount();
                 });
-                
+
                 conn.on('error', (e) => {
                     logDebug(`conn.on('error') from ${conn.peer}: ` + (e ? e.message : 'unknown'));
                     connectedPeers = connectedPeers.filter(p => p !== conn);
@@ -950,7 +1052,7 @@
                 console.error("Host PeerJS Error:", err);
                 if (err.type === 'unavailable-id') {
                     // PIN already taken on peerjs broker, add random suffix
-                    const altPin = pin + '-' + Math.floor(Math.random()*90 + 10);
+                    const altPin = pin + '-' + Math.floor(Math.random() * 90 + 10);
                     startHost(altPin);
                 }
             });
@@ -991,7 +1093,7 @@
                 document.getElementById('peer-status-text').textContent = `Staff Mode: ${roomName}`;
                 document.getElementById('peer-status-dot').className = 'status-dot online';
             };
-            
+
             if (conn.open) {
                 logDebug("Client conn already open");
                 onOpen();
@@ -1074,7 +1176,7 @@
 
             // Optional haptic vibration (OFF by default)
             if (hapticEnabled && window.navigator && window.navigator.vibrate) {
-                try { window.navigator.vibrate(25); } catch(e) {}
+                try { window.navigator.vibrate(25); } catch (e) { }
             }
 
             tableStates[key] = newState;
@@ -1098,7 +1200,7 @@
             localStorage.setItem('pkm_haptic_enabled', hapticEnabled ? '1' : '0');
             updateHapticButton();
             if (hapticEnabled && window.navigator && window.navigator.vibrate) {
-                try { window.navigator.vibrate(30); } catch(e) {}
+                try { window.navigator.vibrate(30); } catch (e) { }
             }
         }
 
@@ -1133,7 +1235,7 @@
                 localStorage.removeItem('pkm_table_ops_states');
                 localStorage.removeItem('pkm_table_ops_pin');
                 if (typeof myPeer !== 'undefined' && myPeer) {
-                    try { myPeer.destroy(); } catch(e) {}
+                    try { myPeer.destroy(); } catch (e) { }
                 }
                 window.location.hash = '';
                 window.location.search = ''; // clears ?room=
@@ -1158,10 +1260,10 @@
                 try {
                     const payloadStr = decodeURIComponent(window.location.hash.substring(6));
                     const data = JSON.parse(payloadStr);
-                    
+
                     tournament.title = data.title || 'Tournament Pairings';
                     tournament.dateStr = data.dateStr || '';
-                    
+
                     let hasNewRound = false;
                     Object.keys(data.divisions).forEach(tId => {
                         const newDiv = data.divisions[tId];
@@ -1174,7 +1276,7 @@
                     });
 
                     if (hasNewRound) console.log("New round detected!");
-                    
+
                     saveLocalState();
                     renderDivisions();
                     renderTables();
@@ -1182,9 +1284,9 @@
                     if (isHost) {
                         broadcastAction({ type: 'SYNC_BOARD', tournament, tableStates });
                     }
-                    
+
                     history.replaceState(null, null, window.location.pathname + window.location.search);
-                } catch(e) {
+                } catch (e) {
                     console.error("Error parsing bookmarklet data:", e);
                     alert("Error loading data from RK9.");
                 }
@@ -1193,22 +1295,22 @@
 
         function openPasteModal() { document.getElementById('paste-modal').style.display = 'flex'; }
         function closePasteModal() { document.getElementById('paste-modal').style.display = 'none'; document.getElementById('paste-html-input').value = ''; }
-        
+
         function processPastedHtml() {
             const html = document.getElementById('paste-html-input').value;
             if (!html.trim()) { alert('Please paste the HTML first.'); return; }
-            
+
             try {
                 const roundChanged = parsePairingsData(html);
                 if (roundChanged) console.log("New round detected!");
-                
+
                 saveLocalState();
                 renderDivisions();
                 renderTables();
 
                 if (isHost) { broadcastAction({ type: 'SYNC_BOARD', tournament, tableStates }); }
                 closePasteModal();
-            } catch(e) {
+            } catch (e) {
                 console.error("Error parsing pasted HTML:", e);
                 alert("Error parsing HTML. Make sure you copied from the pairings page.");
             }
@@ -1226,11 +1328,11 @@
 
             let hasNewRound = false;
             const pillLinks = doc.querySelectorAll('ul.nav-pills li.nav-item a.nav-link');
-            
+
             pillLinks.forEach(link => {
                 const targetId = (link.getAttribute('href') || '').replace('#', '');
                 const rawName = link.textContent.trim();
-                
+
                 let divName = rawName;
                 let roundNum = 1;
                 const match = rawName.match(/^(.*?)\s+in\s+Round\s+(\d+)/i);
@@ -1248,9 +1350,9 @@
                 const tableList = [];
 
                 if (divPane) {
-                    const activeRoundTab = divPane.querySelector('.current-tables.active, .current-tables.show') || 
-                                           divPane.querySelector('.current-tables');
-                    
+                    const activeRoundTab = divPane.querySelector('.current-tables.active, .current-tables.show') ||
+                        divPane.querySelector('.current-tables');
+
                     if (activeRoundTab) {
                         const matchRows = activeRoundTab.querySelectorAll('.row.match.no-gutter');
                         matchRows.forEach((row, rIdx) => {
@@ -1260,7 +1362,7 @@
                             const p1El = row.querySelector('.player1 .name');
                             const p2El = row.querySelector('.player2 .name');
                             const tNumEl = row.querySelector('.tablenumber');
-                            
+
                             let tNum = tNumEl ? parseInt(tNumEl.textContent.trim(), 10) || rIdx : rIdx;
                             let p1 = "Player 1";
                             let p2 = "Player 2";
@@ -1291,6 +1393,169 @@
         }
 
         // ---------------------------------------------------------
+        // TOM FILE SYNC (File System Access API)
+        // ---------------------------------------------------------
+        let tomFileHandle = null;
+        let tomSyncTimer = null;
+        let tomSyncIntervalMs = 45000;
+
+        async function startTomSync() {
+            try {
+                if (!window.showOpenFilePicker) {
+                    alert("Your browser does not support the File System Access API. Please use Google Chrome or Microsoft Edge.");
+                    return;
+                }
+                const [fileHandle] = await window.showOpenFilePicker({
+                    types: [{
+                        description: 'TOM Data File',
+                        accept: { 'text/xml': ['.tdf'] }
+                    }],
+                    excludeAcceptAllOption: true,
+                    multiple: false
+                });
+                tomFileHandle = fileHandle;
+                
+                await forceTomSync();
+                startTomInterval();
+                alert("✅ TOM Auto-Sync activated! Polling every " + (tomSyncIntervalMs/1000) + " seconds.");
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error("Error opening file:", err);
+                    alert("Error opening TOM file. " + err.message);
+                }
+            }
+        }
+
+        function startTomInterval() {
+            if (tomSyncTimer) clearInterval(tomSyncTimer);
+            if (!tomFileHandle) return;
+            tomSyncTimer = setInterval(forceTomSync, tomSyncIntervalMs);
+        }
+
+        function applyTomSettings() {
+            const val = parseInt(document.getElementById('tom-interval-input').value, 10);
+            if (val >= 5) {
+                tomSyncIntervalMs = val * 1000;
+                startTomInterval();
+                document.getElementById('tom-settings-modal').style.display = 'none';
+                if (tomFileHandle) alert("Interval updated to " + val + " seconds.");
+            } else {
+                alert("Interval must be at least 5 seconds.");
+            }
+        }
+
+        async function forceTomSync() {
+            if (!tomFileHandle) {
+                alert("Please click '📂 TOM Sync (.tdf)' to select a file first.");
+                return;
+            }
+            try {
+                const file = await tomFileHandle.getFile();
+                const xmlText = await file.text();
+                
+                const roundChanged = parseTomData(xmlText);
+                if (roundChanged) console.log("New round detected from TOM!");
+                
+                saveLocalState();
+                renderDivisions();
+                renderTables();
+
+                if (isHost) { broadcastAction({ type: 'SYNC_BOARD', tournament, tableStates }); }
+            } catch(e) {
+                console.error("TOM Sync Error:", e);
+                // Don't alert aggressively on background poll failure, just log it.
+            }
+        }
+
+        function parseTomData(xmlString) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xmlString, 'text/xml');
+            
+            const dataNode = doc.querySelector('data');
+            if (dataNode) {
+                const nameNode = dataNode.querySelector('name');
+                if (nameNode) tournament.title = nameNode.textContent.trim();
+                const dateNode = dataNode.querySelector('startdate');
+                if (dateNode) tournament.dateStr = dateNode.textContent.trim();
+            }
+
+            let hasNewRound = false;
+            const pods = doc.querySelectorAll('pod');
+            
+            pods.forEach(pod => {
+                const catStr = pod.getAttribute('category');
+                if (!catStr) return;
+                
+                const roundsNode = pod.querySelector('rounds');
+                if (!roundsNode) return;
+                
+                const catInt = parseInt(catStr, 10);
+                let divName = "Division " + catInt;
+                let divId = "div_" + catInt;
+                if (catInt === 0) { divName = "Juniors"; divId = "juniors"; }
+                else if (catInt === 1) { divName = "Seniors"; divId = "seniors"; }
+                else if (catInt === 2) { divName = "Masters"; divId = "masters"; }
+
+                const allRounds = roundsNode.querySelectorAll('round');
+                if (allRounds.length === 0) return;
+                
+                let highestRoundNum = -1;
+                let activeRoundNode = null;
+                allRounds.forEach(r => {
+                    const rNum = parseInt(r.getAttribute('number') || "0", 10);
+                    if (rNum > highestRoundNum) {
+                        highestRoundNum = rNum;
+                        activeRoundNode = r;
+                    }
+                });
+                
+                if (!activeRoundNode) return;
+
+                const prevRound = tournament.divisions[divId]?.round;
+                if (prevRound && prevRound !== highestRoundNum) {
+                    hasNewRound = true;
+                }
+
+                const tableList = [];
+                const matches = activeRoundNode.querySelectorAll('match');
+                
+                matches.forEach(m => {
+                    const tNumNode = m.querySelector('tablenumber');
+                    const outcome = m.getAttribute('outcome');
+                    
+                    if (!tNumNode) return;
+                    const tNum = parseInt(tNumNode.textContent.trim(), 10);
+                    
+                    if (tNum === 0) return; // Skip byes
+                    
+                    const isOfficialDone = (outcome !== "0");
+
+                    tableList.push({
+                        num: tNum,
+                        p1: "Player 1",
+                        p2: "Player 2",
+                        isOfficialDone: isOfficialDone
+                    });
+                });
+
+                tableList.sort((a,b) => a.num - b.num);
+
+                tournament.divisions[divId] = {
+                    name: divName,
+                    round: highestRoundNum,
+                    rawLabel: `${divName} in Round ${highestRoundNum}`,
+                    tables: tableList
+                };
+
+                if (!tournament.activeDivisionId) {
+                    tournament.activeDivisionId = divId;
+                }
+            });
+
+            return hasNewRound;
+        }
+
+        // ---------------------------------------------------------
         // GHOST TABLE TICK ENGINE (1s Interval)
         // ---------------------------------------------------------
         function startGhostTimer() {
@@ -1310,7 +1575,7 @@
             div.tables.forEach(t => {
                 const key = `${tournament.activeDivisionId}_R${div.round}_${t.num}`;
                 const st = tableStates[key];
-                
+
                 if (st && st.status === 'empty' && !t.isOfficialDone) {
                     const elapsedSec = Math.floor((now - st.timestamp) / 1000);
                     if (elapsedSec >= 120) {
@@ -1402,7 +1667,7 @@
             div.tables.forEach(table => {
                 const key = `${tournament.activeDivisionId}_R${div.round}_${table.num}`;
                 const customState = tableStates[key] || { status: 'default', timestamp: 0 };
-                
+
                 // Determine effective state
                 let effectiveState = customState.status;
                 let isGhost = false;
@@ -1584,7 +1849,7 @@
             try {
                 localStorage.setItem('pkm_table_ops_tourney', JSON.stringify(tournament));
                 localStorage.setItem('pkm_table_ops_states', JSON.stringify(tableStates));
-            } catch(e) {}
+            } catch (e) { }
         }
 
         function loadLocalState() {
@@ -1601,7 +1866,7 @@
 
                 hapticEnabled = localStorage.getItem('pkm_haptic_enabled') === '1';
                 updateHapticButton();
-            } catch(e) {}
+            } catch (e) { }
         }
 
         function escapeHtml(str) {
@@ -1627,4 +1892,5 @@
         window.addEventListener('hashchange', handleUrlHash);
     </script>
 </body>
+
 </html>
