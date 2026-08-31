@@ -1,111 +1,80 @@
-# Table Operations Grid - Developer Documentation
+# Table Ops - How It Works Under the Hood
 
-This document provides a comprehensive overview of the JavaScript architecture, state management, and core logic used in `index.html` for the **Table Operations Grid**. It is specifically designed to assist developers in migrating the Vanilla JavaScript codebase to TypeScript.
+Hey there! If you're looking at `index.html` and wondering how all this Vanilla JavaScript ties together to create a real-time, peer-to-peer table management system, you're in the right place. 
 
-## 🏗️ Architecture Overview
+This document is a quick, human-readable breakdown of the architecture. The goal of this app was to keep things as simple and lightweight as possible—no build tools, no Node.js server, no database. Just one HTML file, some CSS, and plain ES6 JavaScript.
 
-The application is a single-page HTML file (`index.html`) that uses **Vanilla JavaScript (ES6)**. It utilizes the **PeerJS** library (WebRTC wrapper) to establish direct Peer-to-Peer (P2P) connections between devices without a central database server.
+## 🏗️ The Big Picture
 
-The app operates in two distinct modes depending on the URL parameters:
-1. **Host Mode**: Runs on the main PC. Maintains the master state, accepts incoming connections from Judges (Clients), and broadcasts state changes.
-2. **Client Mode** (Judge): Runs on smartphones. Connects to the Host via a PIN (`?room=...`), receives the master state, and sends table status updates back to the Host.
+The whole app revolves around two main concepts:
+1. **The Data**: Parsing and displaying the tournament pairings.
+2. **The Sync**: Using **PeerJS** (WebRTC) to sync the status of each table across multiple phones in real-time, without needing a backend server.
 
-## 💾 State Management (Data Structures)
+When you open the page, it can run in one of two modes:
+- **Host Mode**: If you just open the page normally, you're the Host. The app generates a random PIN (like `PKM-MRV6T`), creates a WebRTC room, and waits for people to connect.
+- **Client (Judge) Mode**: If you open the page with a URL parameter like `?room=MRV6T`, the app knows you're a judge trying to connect to a Host. It skips creating a new room and immediately connects to the Host PC.
 
-If translating to TypeScript, these are the core interfaces that define the application's global state.
+---
 
-### 1. `tournament` Object
-Holds the parsed tournament pairings data. This data is read-only from the perspective of the application (it is overwritten only when new pairings are injected via Bookmarklet or Paste).
+## 💾 The State (How we store data)
 
-```typescript
-interface Table {
-    num: number;             // Table number
-    p1: string;              // Hardcoded to "Player 1" for privacy
-    p2: string;              // Hardcoded to "Player 2" for privacy
-    isOfficialDone: boolean; // True if the table has a result on the official pairings
-}
+Since we don't use React or Vue, all the "state" lives in a few global JavaScript variables at the top of the script. The two most important ones are:
 
-interface Division {
-    name: string;
-    round: number;
-    rawLabel: string;
-    tables: Table[];
-}
+### 1. The `tournament` Object
+This holds the static data about the tournament (the pairings). We get this data when the user clicks the Bookmarklet on the official pairings page, or pastes the HTML.
+It looks like this:
+```javascript
+let tournament = {
+    title: "Regional Championships",
+    dateStr: "August 2026",
+    activeDivisionId: "masters",
+    divisions: {
+        "masters": {
+            name: "Masters",
+            round: 5,
+            tables: [
+                { num: 1, p1: "Player 1", p2: "Player 2", isOfficialDone: false },
+                // ... more tables
+            ]
+        }
+    }
+};
+```
+*(Note: We hardcode `p1` and `p2` to "Player 1/2" for privacy reasons, so we don't accidentally leak real names if the screen is visible to the public).*
 
-interface TournamentData {
-    title: string;
-    dateStr: string;
-    activeDivisionId: string;
-    divisions: Record<string, Division>; // Keyed by HTML division ID
-}
+### 2. The `tableStates` Object
+While `tournament` holds the static pairings, `tableStates` holds the *dynamic* stuff—the buttons the judges are tapping on their phones.
+It's just a big dictionary (object) where the key is a combination of the division, round, and table number (e.g., `masters_R5_12`).
+```javascript
+let tableStates = {
+    "masters_R5_12": {
+        status: "playing", // can be 'default', 'playing', 'judge', or 'empty'
+        timestamp: 1693400000000, // when the button was tapped
+        peerId: "PKM-JUDGE-xyz"   // who tapped it
+    }
+};
 ```
 
-### 2. `tableStates` Object
-Holds the dynamic state of each table manipulated by the Judges. The key is a composite string: `${divId}_R${round}_${tableNum}`.
+---
 
-```typescript
-type TableStatus = 'default' | 'playing' | 'judge' | 'empty';
+## 📡 The P2P Magic (PeerJS)
 
-interface TableState {
-    status: TableStatus;
-    timestamp: number;       // Date.now() when the status changed
-    peerId: string;          // The Peer ID of the judge who made the change
-}
+We use [PeerJS](https://peerjs.com/) to handle the WebRTC connections. WebRTC is notoriously annoying to set up manually, but PeerJS makes it as easy as opening a WebSocket.
 
-// Global Dictionary
-let tableStates: Record<string, TableState> = {};
-```
+Here's the flow of how data moves around:
+1. **Connecting**: The Host runs `new Peer(myRoomId)`. The Client runs `myPeer.connect(targetRoom)`. 
+2. **The Handshake**: PeerJS uses a free signaling server (`0.peerjs.com`) just to exchange IP addresses. Because mobile networks can be strict with NATs, we also explicitly pass Google's STUN servers and a free TURN server (`openrelay.metered.ca`) in the config to guarantee the connection works even on cellular data.
+3. **Syncing**: Once connected, the Host immediately sends a `SYNC_BOARD` message containing the entire `tournament` and `tableStates` objects to the Client.
+4. **Updating**: When a judge taps a table to mark it as "Judge Call", the Client updates its local `tableStates` and sends an `UPDATE_TABLE` message to the Host. The Host receives it, updates its own master state, and rebroadcasts it to *all other* connected judges so everyone's screen updates instantly.
 
-## 🌐 WebRTC (PeerJS) Lifecycle
+---
 
-The application uses `PeerJS` to sync the `tournament` and `tableStates` objects across devices.
+## ⚙️ The Core Functions to Know
 
-### Core Variables
-- `let myPeer: any`: The PeerJS instance for the current device.
-- `let isHost: boolean`: `true` if this device created the room, `false` if joined via `?room=`.
-- `let myRoomId: string`: The current device's Peer ID.
-- `let connectedPeers: any[]`: (Host only) Array of active `DataConnection` objects.
+If you're digging through the code, these are the main functions doing the heavy lifting:
 
-### Message Protocol
-Devices communicate by sending JSON objects over the WebRTC `DataChannel`.
-```typescript
-interface SyncBoardMessage {
-    type: 'SYNC_BOARD';
-    tournament: TournamentData;
-    tableStates: Record<string, TableState>;
-}
+- **`handleUrlHash()` & `processPastedHtml()`**: These functions ingest the raw HTML from the pairings page. They use standard `DOMParser` to read the HTML, extract the tables, and populate the `tournament` object.
+- **`renderTables()`**: The core UI loop. It clears the grid and rebuilds the HTML for every table. It checks both the static `tournament` data and the dynamic `tableStates` to figure out what color/timer the table should have.
+- **`startGhostTimer()`**: A simple `setInterval` that runs every second. It checks if any table has a status of `'empty'`. If it's been empty for more than 120 seconds (and isn't officially marked as done), it flags it as a **Ghost Table** (`st-ghost`) to alert the staff that something is wrong.
 
-interface UpdateTableMessage {
-    type: 'UPDATE_TABLE';
-    key: string;            // e.g., 'div1_R1_12'
-    status: TableStatus;
-    timestamp: number;
-    peerId: string;
-}
-```
-
-### Flow:
-1. **Client Action**: A Judge taps a table. `changeTableStatus()` updates the local `tableStates` and sends an `UPDATE_TABLE` message to the Host.
-2. **Host Reception**: The Host receives `UPDATE_TABLE`, updates its master `tableStates`, and broadcasts the `UPDATE_TABLE` message to *all other* connected Clients.
-3. **Client Reception**: Other Clients receive `UPDATE_TABLE`, update their local `tableStates`, and re-render the affected table.
-
-## 🔄 Core Functions
-
-### Data Ingestion
-- `setupBookmarklet()`: Injects a JavaScript URI into the bookmark button. When clicked on the pairings page, it scrapes the DOM, serializes it, and sends it to `table-ops` via URL hash (`#data=...`).
-- `parsePairingsData(html: string)`: Parses raw HTML pasted in the modal, extracts tables using `DOMParser`, and populates the `tournament` object.
-
-### Rendering
-- `renderDivisions()`: Renders the pill-navigation for different age divisions.
-- `renderTables()`: Renders the grid of tables based on `tournament.divisions[activeDivisionId]`. It merges the static data (`isOfficialDone`) with the dynamic `tableStates`.
-- `createTableElement(...)`: Generates the HTML string for a single table card.
-
-### Ghost Table Engine
-- `startGhostTimer()`: Starts a `setInterval` that fires every 1000ms.
-- `updateTimerDisplays()`: Iterates through all rendered tables. If a table has `status === 'empty'` and has been empty for $\ge 120$ seconds without being officially reported (`!isOfficialDone`), it applies the `st-ghost` CSS class and alerts the UI.
-
-## 📱 Network Constraints (Important for TS Migration)
-
-When porting this logic or hosting it on a restricted corporate/official domain:
-- The app relies on **public STUN servers** (`stun.l.google.com`) and a **fallback TURN server** (`openrelay.metered.ca`) configured in the `new Peer(...)` initialization.
-- The app requires the host and clients to be on the same local network without AP Isolation, OR have access to the TURN server, to establish WebRTC channels successfully.
+And that's pretty much it! It's just a bunch of DOM manipulation and simple JSON messages flying back and forth over WebRTC. Feel free to tweak it!
