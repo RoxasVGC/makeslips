@@ -1,80 +1,112 @@
-# Table Ops - How It Works Under the Hood
+# Table Ops - The Developer Deep Dive
 
-Hey there! If you're looking at `index.html` and wondering how all this Vanilla JavaScript ties together to create a real-time, peer-to-peer table management system, you're in the right place. 
+Hey there! If you're looking to understand, tweak, or port the `index.html` file of the **Table Operations Grid**, you've come to the right place.
 
-This document is a quick, human-readable breakdown of the architecture. The goal of this app was to keep things as simple and lightweight as possible—no build tools, no Node.js server, no database. Just one HTML file, some CSS, and plain ES6 JavaScript.
+This app is built entirely in **Vanilla JavaScript (ES6)**. There are no build tools, no Node.js backend, and no React. It's just you, the DOM, and WebRTC. The architecture is designed to be a completely serverless, peer-to-peer (P2P) mesh using the **PeerJS** library.
 
-## 🏗️ The Big Picture
-
-The whole app revolves around two main concepts:
-1. **The Data**: Parsing and displaying the tournament pairings.
-2. **The Sync**: Using **PeerJS** (WebRTC) to sync the status of each table across multiple phones in real-time, without needing a backend server.
-
-When you open the page, it can run in one of two modes:
-- **Host Mode**: If you just open the page normally, you're the Host. The app generates a random PIN (like `PKM-MRV6T`), creates a WebRTC room, and waits for people to connect.
-- **Client (Judge) Mode**: If you open the page with a URL parameter like `?room=MRV6T`, the app knows you're a judge trying to connect to a Host. It skips creating a new room and immediately connects to the Host PC.
+Here's a conversational breakdown of how all the moving parts fit together.
 
 ---
 
-## 💾 The State (How we store data)
+## 🏗️ 1. The Global State (Our "Database")
 
-Since we don't use React or Vue, all the "state" lives in a few global JavaScript variables at the top of the script. The two most important ones are:
+Since we don't have a backend database, the "truth" lives in memory on the Host PC and is mirrored to the Judges' smartphones. We use two main objects to store everything:
 
-### 1. The `tournament` Object
-This holds the static data about the tournament (the pairings). We get this data when the user clicks the Bookmarklet on the official pairings page, or pastes the HTML.
-It looks like this:
+### The `tournament` Object (Static Data)
+This is where we store the actual tournament pairings. We treat this as "read-only" data once it's imported.
+It looks exactly like this under the hood:
 ```javascript
 let tournament = {
     title: "Regional Championships",
     dateStr: "August 2026",
-    activeDivisionId: "masters",
+    activeDivisionId: "masters", // Keeps track of which tab is currently selected
     divisions: {
         "masters": {
             name: "Masters",
             round: 5,
+            rawLabel: "Masters in Round 5",
             tables: [
-                { num: 1, p1: "Player 1", p2: "Player 2", isOfficialDone: false },
-                // ... more tables
+                {
+                    num: 1, 
+                    p1: "Player 1", // Hardcoded for privacy
+                    p2: "Player 2", 
+                    isOfficialDone: false // True if the official pairings show a result
+                }
             ]
         }
     }
 };
 ```
-*(Note: We hardcode `p1` and `p2` to "Player 1/2" for privacy reasons, so we don't accidentally leak real names if the screen is visible to the public).*
 
-### 2. The `tableStates` Object
-While `tournament` holds the static pairings, `tableStates` holds the *dynamic* stuff—the buttons the judges are tapping on their phones.
-It's just a big dictionary (object) where the key is a combination of the division, round, and table number (e.g., `masters_R5_12`).
+### The `tableStates` Object (Dynamic Data)
+This is where the magic happens. Every time a judge taps a table on their phone, we record it here. 
+Instead of arrays, this is a giant Dictionary (Object) where the key is a unique string `"{division}_R{round}_{tableNum}"`. This makes it insanely fast to look up a table without looping through arrays.
+
 ```javascript
 let tableStates = {
     "masters_R5_12": {
-        status: "playing", // can be 'default', 'playing', 'judge', or 'empty'
-        timestamp: 1693400000000, // when the button was tapped
-        peerId: "PKM-JUDGE-xyz"   // who tapped it
+        status: "playing",       // The current state
+        timestamp: 1693400000,   // Date.now() when the button was tapped
+        peerId: "PKM-JUDGE-xyz"  // The ID of the device that made the change
     }
 };
 ```
 
----
-
-## 📡 The P2P Magic (PeerJS)
-
-We use [PeerJS](https://peerjs.com/) to handle the WebRTC connections. WebRTC is notoriously annoying to set up manually, but PeerJS makes it as easy as opening a WebSocket.
-
-Here's the flow of how data moves around:
-1. **Connecting**: The Host runs `new Peer(myRoomId)`. The Client runs `myPeer.connect(targetRoom)`. 
-2. **The Handshake**: PeerJS uses a free signaling server (`0.peerjs.com`) just to exchange IP addresses. Because mobile networks can be strict with NATs, we also explicitly pass Google's STUN servers and a free TURN server (`openrelay.metered.ca`) in the config to guarantee the connection works even on cellular data.
-3. **Syncing**: Once connected, the Host immediately sends a `SYNC_BOARD` message containing the entire `tournament` and `tableStates` objects to the Client.
-4. **Updating**: When a judge taps a table to mark it as "Judge Call", the Client updates its local `tableStates` and sends an `UPDATE_TABLE` message to the Host. The Host receives it, updates its own master state, and rebroadcasts it to *all other* connected judges so everyone's screen updates instantly.
+*(Note: The allowed statuses are `'default'`, `'playing'`, `'judge'`, and `'empty'`)*.
 
 ---
 
-## ⚙️ The Core Functions to Know
+## 🎨 2. The CSS Classes (UI States)
 
-If you're digging through the code, these are the main functions doing the heavy lifting:
+When we render the tables in the HTML grid, we map the JavaScript `status` to specific CSS classes. This is what changes the colors on the screen:
 
-- **`handleUrlHash()` & `processPastedHtml()`**: These functions ingest the raw HTML from the pairings page. They use standard `DOMParser` to read the HTML, extract the tables, and populate the `tournament` object.
-- **`renderTables()`**: The core UI loop. It clears the grid and rebuilds the HTML for every table. It checks both the static `tournament` data and the dynamic `tableStates` to figure out what color/timer the table should have.
-- **`startGhostTimer()`**: A simple `setInterval` that runs every second. It checks if any table has a status of `'empty'`. If it's been empty for more than 120 seconds (and isn't officially marked as done), it flags it as a **Ghost Table** (`st-ghost`) to alert the staff that something is wrong.
+- `.table-card` (Default state, gray border, unassigned)
+- `.table-card.st-playing` (Green background: players are seated and playing)
+- `.table-card.st-judge` (Red background: active judge call)
+- `.table-card.st-empty` (Yellow background: match finished, slip picked up, but result not reported yet)
+- `.table-card.st-ghost` (Blinking warning: table has been `st-empty` for over 2 minutes. Something is wrong!)
+- `.table-card.complete` (Dark gray, crossed out: the official pairings confirm the match is over).
 
-And that's pretty much it! It's just a bunch of DOM manipulation and simple JSON messages flying back and forth over WebRTC. Feel free to tweak it!
+---
+
+## 📡 3. The P2P Networking (PeerJS)
+
+We use WebRTC to let browsers talk directly to each other. 
+- **`isHost`**: A boolean. If you open the page normally, you are the Host (`isHost = true`).
+- **`myRoomId`**: Your device's unique ID.
+- **`connectedPeers`**: An array (Host only) keeping track of all connected Judges.
+
+### The Handshake
+1. The Host initializes `new Peer(myRoomId)`.
+2. A Judge scans the QR code (which adds `?room=PKM-XYZ` to the URL).
+3. The Judge's browser reads the URL, sees the room code, and calls `myPeer.connect("PKM-XYZ")`.
+
+*Network Tip: We pass Google STUN servers and a free TURN server (`openrelay.metered.ca`) to the PeerJS config. Without this, smartphones on 4G/5G wouldn't be able to punch through NAT firewalls to reach the Host PC!*
+
+### The Communication Loop
+When someone taps a table, we don't just change the color locally. We call:
+`broadcastAction({ type: 'UPDATE_TABLE', key: 'masters_R5_12', status: 'judge', timestamp: Date.now(), peerId: myRoomId })`
+- **If a Judge calls it**: The JSON goes to the Host. The Host updates its master `tableStates`, then bounces that JSON out to *all other* connected judges.
+- **If the Host calls it**: The JSON goes directly to all judges.
+
+---
+
+## ⚙️ 4. The Core Functions (What does what?)
+
+If you're reading through the code top-to-bottom, here are the functions doing the heavy lifting:
+
+### Data Ingestion
+- **`setupBookmarklet()`**: This builds the JavaScript code that lives inside the "🔖 Sync to Table Ops" button. When clicked on the official pairings page, it scrapes the DOM, builds the `tournament` object, and sends it to our app via the URL Hash (`#data=...`).
+- **`handleUrlHash()`**: Listens for that `#data=` string on page load, parses the JSON, and loads the tournament.
+- **`processPastedHtml()` & `parsePairingsData()`**: If the user uses the "Paste HTML" modal instead of the bookmarklet, these functions use `DOMParser` to read the raw HTML string, hunt down the tables using CSS selectors, and build the `tournament` object.
+
+### The UI Engine
+- **`renderDivisions()`**: Builds the top tabs (Masters, Seniors, Juniors).
+- **`renderTables()`**: The most important visual function. It loops through `tournament.divisions[activeDivisionId].tables`, checks `tableStates` to see what color the table should be, and calls...
+- **`createTableElement(table, state)`**: Returns the raw HTML string (`<div class="table-card...">...</div>`) for a single table.
+
+### The Logic Engine
+- **`changeTableStatus(tNum, status)`**: Triggered when a table card is clicked. Updates `tableStates` and fires the network broadcast.
+- **`startGhostTimer()` & `updateTimerDisplays()`**: A heartbeat function that runs every 1 second (`setInterval`). It scans all rendered tables. If a table is marked as `empty`, it calculates `Date.now() - timestamp`. If it's over 120 seconds, it forcibly applies the `st-ghost` CSS class and changes the text to "⚠️ GHOST".
+
+And that's the whole app in a nutshell! Simple, stateless, and entirely client-side.
