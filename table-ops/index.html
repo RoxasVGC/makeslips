@@ -681,6 +681,59 @@
             color: #fff;
             margin-bottom: 8px;
         }
+
+        /* Translation Banner */
+        .translation-banner {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ef4444;
+            color: #fff;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            font-weight: bold;
+            animation: slideDown 0.3s ease-out;
+            min-width: 300px;
+            text-align: center;
+        }
+
+        @keyframes slideDown {
+            from { top: -100px; opacity: 0; }
+            to { top: 20px; opacity: 1; }
+        }
+
+        .translation-banner.active {
+            display: flex;
+        }
+
+        .lang-btn {
+            background: var(--surf2);
+            border: 1px solid var(--bord);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .lang-btn:hover {
+            background: var(--acc2);
+            color: #000;
+        }
+        
+        .lang-btn.selected {
+            background: #10b981;
+            color: #000;
+            border-color: #047857;
+        }
     </style>
 </head>
 
@@ -789,6 +842,34 @@
         </div>
     </div>
 
+    <!-- Translation Alert Banner -->
+    <div id="translation-alert-banner" class="translation-banner">
+        <div style="font-size: 1.2rem;" id="translation-alert-text">🌐 Table 42 needs French!</div>
+        <div style="font-size: 0.9rem; font-weight: normal;">Translation requested.</div>
+        <div style="display: flex; gap: 8px; width: 100%;">
+            <button type="button" class="btn-primary" style="flex: 1; background: #fff; color: #ef4444;" onclick="acceptTranslation()">Accept</button>
+            <button type="button" class="btn-secondary" style="flex: 1; border-color: rgba(255,255,255,0.4);" onclick="dismissTranslationBanner()">Hide</button>
+        </div>
+    </div>
+
+    <!-- Translation Request Modal -->
+    <div class="modal-overlay" id="translation-modal" onclick="if(event.target === this) this.style.display='none'">
+        <div class="modal-card">
+            <h2>🌐 Request Translation</h2>
+            <p>Select the language needed at <strong id="trans-modal-table-num">Table X</strong>.</p>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 20px;">
+                <button type="button" class="lang-btn" onclick="sendTranslationRequest('French')">🇫🇷 French</button>
+                <button type="button" class="lang-btn" onclick="sendTranslationRequest('Spanish')">🇪🇸 Spanish</button>
+                <button type="button" class="lang-btn" onclick="sendTranslationRequest('German')">🇩🇪 German</button>
+                <button type="button" class="lang-btn" onclick="sendTranslationRequest('Italian')">🇮🇹 Italian</button>
+                <button type="button" class="lang-btn" onclick="sendTranslationRequest('Portuguese')">🇵🇹 Portuguese</button>
+            </div>
+            
+            <button type="button" class="btn-secondary" style="width: 100%;" onclick="document.getElementById('translation-modal').style.display='none'">Cancel</button>
+        </div>
+    </div>
+
     <!-- QR Code & Custom Password Modal -->
     <div class="modal-overlay" id="qr-modal" onclick="if(event.target === this) closeQrModal()">
         <div class="modal-card">
@@ -820,13 +901,28 @@
             <h2>Join Staff Session</h2>
             <p>Enter the Session PIN / Room Code set by the tournament organizer.</p>
 
-            <div style="margin-bottom: 16px;">
+            <div style="margin-bottom: 12px;">
                 <input type="text" id="join-pin-input" placeholder="Enter Session PIN (e.g. TORINO2026)..."
                     style="font-size: 16px; font-weight: bold; text-transform: uppercase; text-align: center;">
             </div>
 
+            <div style="margin-bottom: 12px;">
+                <input type="text" id="judge-name-input" placeholder="Your Name (e.g. Mario R.)" style="text-align: center; font-size: 15px;">
+            </div>
+
+            <div style="margin-bottom: 20px; text-align: left; background: var(--surf2); padding: 14px; border-radius: 8px; border: 1px solid var(--bord);">
+                <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; font-weight: bold;">Spoken Languages (for translation alerts)</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;" id="judge-languages-container">
+                    <label style="display: flex; align-items: center; gap: 4px; font-size: 14px; cursor: pointer;"><input type="checkbox" value="French" class="lang-cb"> French</label>
+                    <label style="display: flex; align-items: center; gap: 4px; font-size: 14px; cursor: pointer;"><input type="checkbox" value="Spanish" class="lang-cb"> Spanish</label>
+                    <label style="display: flex; align-items: center; gap: 4px; font-size: 14px; cursor: pointer;"><input type="checkbox" value="German" class="lang-cb"> German</label>
+                    <label style="display: flex; align-items: center; gap: 4px; font-size: 14px; cursor: pointer;"><input type="checkbox" value="Italian" class="lang-cb"> Italian</label>
+                    <label style="display: flex; align-items: center; gap: 4px; font-size: 14px; cursor: pointer;"><input type="checkbox" value="Portuguese" class="lang-cb"> Portuguese</label>
+                </div>
+            </div>
+
             <div style="display: flex; gap: 8px;">
-                <button type="button" class="btn-primary" style="flex: 1;" onclick="connectWithPin()">Connect</button>
+                <button type="button" class="btn-primary" style="flex: 1;" onclick="connectWithPin()">Save & Connect</button>
                 <button type="button" class="btn-secondary" style="flex: 1;" onclick="closeJoinModal()">Cancel</button>
             </div>
         </div>
@@ -885,6 +981,9 @@
         let myPeer = null;
         let myRoomId = '';
         let connectedPeers = [];
+        
+        let myProfile = { name: '', languages: [] };
+        let activeTranslationRequest = null; // { key, tableNum, language }
 
         // ---------------------------------------------------------
         function logDebug(msg) {
@@ -1045,6 +1144,12 @@
                         connectedPeers.forEach(p => {
                             if (p !== conn && p.open) p.send(data);
                         });
+                    } else if (data.type.startsWith('TRANSLATION_')) {
+                        handleTranslationEvent(data);
+                        // Relay to others
+                        connectedPeers.forEach(p => {
+                            if (p !== conn && p.open) p.send(data);
+                        });
                     }
                 });
             });
@@ -1115,6 +1220,8 @@
                 } else if (data.type === 'UPDATE_TABLE_STATE') {
                     tableStates[data.key] = data.state;
                     renderTables();
+                } else if (data.type.startsWith('TRANSLATION_')) {
+                    handleTranslationEvent(data);
                 }
             });
 
@@ -1753,9 +1860,12 @@
                             <div class="vs-sep">vs</div>
                             <div class="player-row">${escapeHtml(table.p2)}</div>
                         </div>
-                        <div class="card-ftr">
+                        <div class="card-ftr" style="border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 6px; margin-bottom: 6px;">
                             <span>Tap to cycle</span>
                             <span class="active-timer" id="timer-${key}">${timerDisplay}</span>
+                        </div>
+                        <div style="display: flex;">
+                            <button type="button" style="width: 100%; font-size: 11px; padding: 5px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: #fff; cursor: pointer;" onclick="event.stopPropagation(); openTranslationModal('${key}', ${table.num})">🌐 Req. Translation</button>
                         </div>
                     </div>
                 `;
@@ -1840,6 +1950,11 @@
                 alert("Please enter a Session PIN.");
                 return;
             }
+            
+            myProfile.name = (document.getElementById('judge-name-input')?.value || '').trim();
+            myProfile.languages = Array.from(document.querySelectorAll('.lang-cb:checked')).map(cb => cb.value);
+            saveLocalState();
+
             const loc = window.location;
             window.location.href = `${loc.protocol}//${loc.host}${loc.pathname}?room=${encodeURIComponent(pin)}`;
         }
@@ -1851,12 +1966,86 @@
         }
 
         // ---------------------------------------------------------
+        // TRANSLATION SYSTEM
+        // ---------------------------------------------------------
+        function openTranslationModal(key, tableNum) {
+            document.getElementById('trans-modal-table-num').textContent = 'Table ' + tableNum;
+            document.getElementById('translation-modal').setAttribute('data-target-key', key);
+            document.getElementById('translation-modal').setAttribute('data-target-num', tableNum);
+            document.getElementById('translation-modal').style.display = 'flex';
+        }
+
+        function sendTranslationRequest(language) {
+            const modal = document.getElementById('translation-modal');
+            const key = modal.getAttribute('data-target-key');
+            const tableNum = modal.getAttribute('data-target-num');
+            
+            tableStates[key] = { status: 'judge', timestamp: Date.now() };
+            saveLocalState();
+            renderTables();
+
+            const action = {
+                type: 'TRANSLATION_REQUEST',
+                key: key,
+                tableNum: tableNum,
+                language: language,
+                sender: myProfile.name || (isHost ? 'Host' : 'Staff')
+            };
+
+            broadcastAction(action);
+            if (isHost) handleTranslationEvent(action);
+
+            modal.style.display = 'none';
+            logDebug("Requested translation for " + language + " at T" + tableNum);
+        }
+
+        function handleTranslationEvent(data) {
+            if (data.type === 'TRANSLATION_REQUEST') {
+                if (myProfile.languages.includes(data.language)) {
+                    activeTranslationRequest = data;
+                    document.getElementById('translation-alert-text').textContent = `🌐 Table ${data.tableNum} needs ${data.language}!`;
+                    document.getElementById('translation-alert-banner').classList.add('active');
+                    
+                    if (hapticEnabled && window.navigator && window.navigator.vibrate) {
+                        try { window.navigator.vibrate([200, 100, 200]); } catch (e) { }
+                    }
+                }
+            } else if (data.type === 'TRANSLATION_ACCEPTED' || data.type === 'TRANSLATION_RESOLVED') {
+                if (activeTranslationRequest && activeTranslationRequest.key === data.key) {
+                    dismissTranslationBanner();
+                    logDebug("Translation taken by " + data.acceptor);
+                }
+            }
+        }
+
+        function acceptTranslation() {
+            if (!activeTranslationRequest) return;
+            
+            const action = {
+                type: 'TRANSLATION_ACCEPTED',
+                key: activeTranslationRequest.key,
+                acceptor: myProfile.name || (isHost ? 'Host' : 'Staff')
+            };
+            
+            broadcastAction(action);
+            if (isHost) handleTranslationEvent(action);
+            
+            dismissTranslationBanner();
+        }
+
+        function dismissTranslationBanner() {
+            activeTranslationRequest = null;
+            document.getElementById('translation-alert-banner').classList.remove('active');
+        }
+
+        // ---------------------------------------------------------
         // LOCAL STORAGE
         // ---------------------------------------------------------
         function saveLocalState() {
             try {
                 localStorage.setItem('pkm_table_ops_tourney', JSON.stringify(tournament));
                 localStorage.setItem('pkm_table_ops_states', JSON.stringify(tableStates));
+                localStorage.setItem('pkm_table_ops_profile', JSON.stringify(myProfile));
             } catch (e) { }
         }
 
@@ -1867,6 +2056,17 @@
 
                 const savedStates = localStorage.getItem('pkm_table_ops_states');
                 if (savedStates) tableStates = JSON.parse(savedStates);
+                
+                const savedProfile = localStorage.getItem('pkm_table_ops_profile');
+                if (savedProfile) {
+                    myProfile = JSON.parse(savedProfile);
+                    if (document.getElementById('judge-name-input')) {
+                        document.getElementById('judge-name-input').value = myProfile.name || '';
+                        document.querySelectorAll('.lang-cb').forEach(cb => {
+                            cb.checked = myProfile.languages.includes(cb.value);
+                        });
+                    }
+                }
 
                 if (tournament.url) {
                     document.getElementById('rk9-url-input').value = tournament.url;
