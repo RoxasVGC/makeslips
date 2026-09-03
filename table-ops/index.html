@@ -961,6 +961,39 @@
         </div>
     </div>
 
+    <!-- Deck Check Modal -->
+    <div class="modal-overlay" id="deckcheck-modal" onclick="if(event.target === this) closeDeckCheckModal()">
+        <div class="modal-card">
+            <h2 id="dc-modal-title" style="margin-bottom: 16px;">Table X - Deck Checks</h2>
+            
+            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--bord);">
+                <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px;" id="dc-p1-name">Player 1</div>
+                <div style="display: flex; gap: 16px; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                        <input type="checkbox" id="dc-p1-partial" onchange="updatePlayerCheck(1, 'partial', this.checked)"> Partial (🔍)
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                        <input type="checkbox" id="dc-p1-full" onchange="updatePlayerCheck(1, 'full', this.checked)"> Full (🃏)
+                    </label>
+                </div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--bord);">
+                <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px;" id="dc-p2-name">Player 2</div>
+                <div style="display: flex; gap: 16px; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                        <input type="checkbox" id="dc-p2-partial" onchange="updatePlayerCheck(2, 'partial', this.checked)"> Partial (🔍)
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                        <input type="checkbox" id="dc-p2-full" onchange="updatePlayerCheck(2, 'full', this.checked)"> Full (🃏)
+                    </label>
+                </div>
+            </div>
+
+            <button type="button" style="width: 100%;" onclick="closeDeckCheckModal()">Done</button>
+        </div>
+    </div>
+
     <script>
 
         let tournament = {
@@ -974,6 +1007,9 @@
 
         // Table manual overrides: key: `${divId}_${round}_${tableNum}` -> { status: 'default'|'playing'|'judge'|'empty', timestamp: number }
         let tableStates = {};
+        
+        // Player deck check state: key: `Normalized Player Name` -> { partial: boolean, full: boolean }
+        let playerStates = {};
 
         let activeFilter = 'all'; // 'all', 'playing', 'judge', 'ghost', 'empty', 'complete'
         let ghostCheckTimer = null;
@@ -1092,7 +1128,8 @@
                     conn.send({
                         type: 'SYNC_BOARD',
                         tournament,
-                        tableStates
+                        tableStates,
+                        playerStates
                     });
                 };
 
@@ -1138,6 +1175,14 @@
                     logDebug(`Host received data: ${data.type}`);
                     if (data.type === 'UPDATE_TABLE_STATE') {
                         tableStates[data.key] = data.state;
+                        saveLocalState();
+                        renderTables();
+                        // Relay to others
+                        connectedPeers.forEach(p => {
+                            if (p !== conn && p.open) p.send(data);
+                        });
+                    } else if (data.type === 'UPDATE_PLAYER_STATE') {
+                        playerStates[data.key] = data.state;
                         saveLocalState();
                         renderTables();
                         // Relay to others
@@ -1212,6 +1257,7 @@
                 if (data.type === 'SYNC_BOARD') {
                     tournament = data.tournament;
                     tableStates = data.tableStates;
+                    if (data.playerStates) playerStates = data.playerStates;
                     if (tournament.url && document.getElementById('rk9-url-input')) {
                         document.getElementById('rk9-url-input').value = tournament.url;
                     }
@@ -1219,6 +1265,9 @@
                     renderTables();
                 } else if (data.type === 'UPDATE_TABLE_STATE') {
                     tableStates[data.key] = data.state;
+                    renderTables();
+                } else if (data.type === 'UPDATE_PLAYER_STATE') {
+                    playerStates[data.key] = data.state;
                     renderTables();
                 } else if (data.type.startsWith('TRANSLATION_')) {
                     handleTranslationEvent(data);
@@ -1265,6 +1314,78 @@
         // ---------------------------------------------------------
         // TABLE STATE MACHINE & CYCLING
         // ---------------------------------------------------------
+        let tableLongPressTimer = null;
+        let longPressTriggered = false;
+
+        function startTableLongPress(divId, tableNum, p1, p2) {
+            longPressTriggered = false;
+            tableLongPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                openDeckCheckModal(tableNum, p1, p2);
+            }, 500); // 500ms hold
+        }
+
+        function endTableLongPress() {
+            if (tableLongPressTimer) {
+                clearTimeout(tableLongPressTimer);
+                tableLongPressTimer = null;
+            }
+        }
+
+        function cycleTableStateWrapper(divId, tableNum) {
+            if (longPressTriggered) return;
+            cycleTableState(divId, tableNum);
+        }
+
+        let currentDcTable = { p1: '', p2: '' };
+
+        function openDeckCheckModal(tableNum, p1, p2) {
+            if (hapticEnabled && window.navigator && window.navigator.vibrate) {
+                try { window.navigator.vibrate(50); } catch (e) { }
+            }
+            
+            document.getElementById('dc-modal-title').textContent = 'Table ' + tableNum + ' - Deck Checks';
+            
+            currentDcTable.p1 = (p1 || '').trim().toLowerCase();
+            currentDcTable.p2 = (p2 || '').trim().toLowerCase();
+            
+            document.getElementById('dc-p1-name').textContent = p1;
+            document.getElementById('dc-p2-name').textContent = p2;
+            
+            const p1State = playerStates[currentDcTable.p1] || {};
+            const p2State = playerStates[currentDcTable.p2] || {};
+            
+            document.getElementById('dc-p1-partial').checked = !!p1State.partial;
+            document.getElementById('dc-p1-full').checked = !!p1State.full;
+            
+            document.getElementById('dc-p2-partial').checked = !!p2State.partial;
+            document.getElementById('dc-p2-full').checked = !!p2State.full;
+            
+            document.getElementById('deckcheck-modal').style.display = 'flex';
+        }
+
+        function closeDeckCheckModal() {
+            document.getElementById('deckcheck-modal').style.display = 'none';
+        }
+
+        function updatePlayerCheck(playerIndex, checkType, isChecked) {
+            const key = playerIndex === 1 ? currentDcTable.p1 : currentDcTable.p2;
+            if (!key) return;
+            
+            if (!playerStates[key]) playerStates[key] = { partial: false, full: false };
+            playerStates[key][checkType] = isChecked;
+            
+            saveLocalState();
+            renderTables();
+            
+            const action = {
+                type: 'UPDATE_PLAYER_STATE',
+                key: key,
+                state: playerStates[key]
+            };
+            broadcastAction(action);
+        }
+
         function cycleTableState(divId, tableNum) {
             const div = tournament.divisions[divId];
             const roundNum = div ? div.round : 1;
@@ -1849,16 +1970,33 @@
                     timerDisplay = `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
                 }
 
+                // Get player state strings for UI
+                const p1State = playerStates[(table.p1 || '').trim().toLowerCase()] || {};
+                const p2State = playerStates[(table.p2 || '').trim().toLowerCase()] || {};
+                
+                const p1Icon = p1State.full ? ' 🃏' : (p1State.partial ? ' 🔍' : '');
+                const p2Icon = p2State.full ? ' 🃏' : (p2State.partial ? ' 🔍' : '');
+                
+                // Escape names for JS arguments
+                const p1Safe = escapeHtml(table.p1).replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                const p2Safe = escapeHtml(table.p2).replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
                 html += `
-                    <div class="table-card st-${effectiveState}" onclick="cycleTableState('${tournament.activeDivisionId}', ${table.num})">
+                    <div class="table-card st-${effectiveState}" 
+                         onmousedown="startTableLongPress('${tournament.activeDivisionId}', ${table.num}, '${p1Safe}', '${p2Safe}')"
+                         onmouseup="endTableLongPress()"
+                         onmouseleave="endTableLongPress()"
+                         ontouchstart="startTableLongPress('${tournament.activeDivisionId}', ${table.num}, '${p1Safe}', '${p2Safe}')"
+                         ontouchend="endTableLongPress()"
+                         onclick="cycleTableStateWrapper('${tournament.activeDivisionId}', ${table.num})">
                         <div class="card-hdr">
                             <span class="t-num">Table ${table.num}</span>
                             <span class="status-badge ${badgeClass}">${badgeText}</span>
                         </div>
                         <div class="players-names">
-                            <div class="player-row">${escapeHtml(table.p1)}</div>
+                            <div class="player-row">${escapeHtml(table.p1)}${p1Icon}</div>
                             <div class="vs-sep">vs</div>
-                            <div class="player-row">${escapeHtml(table.p2)}</div>
+                            <div class="player-row">${escapeHtml(table.p2)}${p2Icon}</div>
                         </div>
                         <div class="card-ftr" style="border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 6px; margin-bottom: 6px;">
                             <span>Tap to cycle</span>
@@ -2046,6 +2184,7 @@
                 localStorage.setItem('pkm_table_ops_tourney', JSON.stringify(tournament));
                 localStorage.setItem('pkm_table_ops_states', JSON.stringify(tableStates));
                 localStorage.setItem('pkm_table_ops_profile', JSON.stringify(myProfile));
+                localStorage.setItem('pkm_table_ops_player_states', JSON.stringify(playerStates));
             } catch (e) { }
         }
 
@@ -2056,6 +2195,9 @@
 
                 const savedStates = localStorage.getItem('pkm_table_ops_states');
                 if (savedStates) tableStates = JSON.parse(savedStates);
+                
+                const savedPlayerStates = localStorage.getItem('pkm_table_ops_player_states');
+                if (savedPlayerStates) playerStates = JSON.parse(savedPlayerStates);
                 
                 const savedProfile = localStorage.getItem('pkm_table_ops_profile');
                 if (savedProfile) {
