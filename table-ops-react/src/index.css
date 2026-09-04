@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --font-bebas: "Bebas Neue", sans-serif;
+  --font-nunito: "Nunito", sans-serif;
+  
+  --color-bg: #0b0b14;
+  --color-surf: #131322;
+  --color-surf2: #1b1b2f;
+  --color-surf3: #24243e;
+  --color-bord: #2a2a46;
+  --color-bord-light: #3d3d66;
+  --color-txt: #f2f2fa;
+  --color-muted: #8e8eb2;
+  --color-st-default: #e0e0ea;
+  --color-st-playing: #ef4444;
+  --color-st-judge: #f59e0b;
+  --color-st-empty: #10b981;
+  --color-st-ghost: #a855f7;
+  --color-st-complete: #059669;
+  --color-acc2: #ffd166;
+
+  --animate-pulse-ghost: pulseGhost 1.8s infinite;
+  --animate-blink: blink 1s infinite;
+}
+
+@keyframes pulseGhost {
+  0%, 100% { box-shadow: 0 0 16px rgba(168, 85, 247, 0.5); }
+  50% { box-shadow: 0 0 32px rgba(168, 85, 247, 0.8); }
+}
+
+@keyframes blink {
+  50% { opacity: 0.3; }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-txt);
+    font-family: var(--font-nunito);
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 15% 15%, rgba(168, 85, 247, 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 85% 85%, rgba(245, 158, 11, 0.05) 0%, transparent 60%);
+    z-index: -1;
+    pointer-events: none;
+  }
+}
